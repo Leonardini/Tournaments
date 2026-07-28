@@ -1,0 +1,40 @@
+# Build artifacts
+*.o
+*.out
+a.out
+__pycache__/
+*.pyc
+
+# Compiled engine binaries (rebuilt by the scripts / reproduce_paley43.sh)
+dp43
+canon_reps
+razor_screen
+hs3fas
+hk_oracle
+margin1_scan
+cert_m1k5
+verify_m1k5
+cert9
+alpha_fast
+enum_profiles
+realize3_partition
+reversal_check
+
+# Regenerated Paley(43) data (rebuilt by reproduce_paley43.sh); d0_reps.txt is kept
+dp43run*/
+*.bin
+delta1_reps.txt
+delta2_reps.txt
+pool*.txt
+manifest.txt
+razor_disjoint_hits.txt
+
+# McKay catalogues and census outputs (download / regenerate)
+*.d6
+selfconverse*.txt
+regulartournaments*.txt
+results/
+*.RData
+
+# OS / editor
+.DS_Store
