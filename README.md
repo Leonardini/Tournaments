@@ -16,14 +16,43 @@ external source noted below.
   engine (`sec5_a3_boundary/alpha_fast.c`); [nauty 2.8.6](https://pallini.di.uniroma1.it/)
   `gentourng` for the n = 11 census. (`appendices/hk_oracle.c` is an include, not a standalone
   program — the other C files `#include` it.)
-- **R** with `igraph`, `lpSolve`, `tidyverse`, `cplexAPI`/`Rcplex`, `rcdd`.
-- **Python 3** with IBM CPLEX 22.1 (`docplex`/`cplex`), Google OR-Tools CP-SAT (`ortools`),
-  `networkx`.
+- **R** — load-bearing: `igraph` (tournaments/graphs, every figure), `lpSolve` (LP
+  column-generation seed; the FAS/HS₃ checks), `rcdd` + `gmp` (exact rational LP and
+  big-rational arithmetic — the exact α\* verification). The **solver-free** obstacle checker
+  `sec5_a3_boundary/verify_obstacle_certs.R` needs **only `gmp`**. Also used: `combinat`
+  (permutations), `slam` (sparse ILP builders), and `cplexAPI`/`Rcplex` (**only** the CPLEX
+  scripts — see *CPLEX (optional)*). A few scripts additionally load `Matrix`, `pracma`, or
+  `tidyverse` for incidental helpers/aggregation — not load-bearing for any certification.
+- **Python 3** with Google OR-Tools CP-SAT (`ortools`), `pulp`, `networkx` (plus IBM CPLEX 22.1
+  `docplex`/`cplex` **only** for the CPLEX scripts — see *CPLEX (optional)* below).
 - McKay digraph catalogues: <https://users.cecs.anu.edu.au/~bdm/data/digraphs.html>.
 
 Most claims are cross-checked by two independent engines (e.g. CPLEX *and* OR-Tools CP-SAT, or an
 ILP *and* a solver-free combinatorial check); optimal values are re-verified in exact rational
 arithmetic.
+
+### CPLEX (optional)
+
+**No headline result needs CPLEX.** The Paley(43) proof (§7), the N(5) ≥ 12 census (§6), the
+FAS = HS₃ census (§4), and cA3's non-3-inducibility (§5) all run with only a C compiler and/or
+free solvers (OR-Tools CP-SAT, PuLP-CBC, `lpSolve`, GLPK). Exactly these eight scripts require
+IBM CPLEX 22.1:
+
+- `sec5_a3_boundary/reg11_realize3.py`, `n10_realize3.py`, `cert_primal_1068.py` — each has a
+  free-solver twin (`independent_realize3_cpsat.py`, `cpsat_realize3_n10.py`,
+  `cert_orbits_1068.py` respectively), so the claim is reproducible without CPLEX.
+- `sec6_bounds/ilp10/solve_ilp10.R`, `sec6_bounds/ilp10/ilp10_aggregate.R` — the n ≤ 10 ILP
+  cross-check; the headline n = 11 census is solver-free C.
+- `appendices/gen_duals.R`, `appendices/k_realizability_lp.R`, `appendices/minimum_set_cover.R`
+  — obstacle-dual, predictability-LP and set-cover computations (CPLEX-only, for the appendices).
+
+To run them, install **IBM ILOG CPLEX Optimization Studio 22.1**, free for academics via the
+[IBM Academic Initiative](https://www.ibm.com/academic), then add the language bindings:
+
+- **Python:** `python <cplex-studio>/python/setup.py install` (the full library; the
+  `pip install cplex` community edition caps models at 1000 variables).
+- **R:** `install.packages("Rcplex", configure.args="--with-cplex-dir=<cplex-studio>/cplex")`;
+  `cplexAPI` (from the CRAN archive) builds against the Studio the same way.
 
 ## Quick start — the Paley(43) result (§7)
 

@@ -4,7 +4,7 @@
 # astar = min_y max_{O in cuts} agree(O,y) <= alpha*, and alpha*<=2/3 automatically (non-transitive => a
 # 3-cycle dual). So  astar == 2/3 exactly  PROVES  alpha* = 2/3.  Output: "gidx astar is23".
 suppressMessages({ library(lpSolve); library(rcdd); library(gmp) })
-source("ObsoleteSourceFiles/alpha_star.R")
+source("../common/alpha_star.R")
 args <- commandArgs(trailingOnly=TRUE); INM<-args[1]; GID<-args[2]; OUT<-args[3]; n<-10
 inm_lines <- readLines(INM); gidx <- readLines(GID)
 two3 <- as.bigq(2L,3L)

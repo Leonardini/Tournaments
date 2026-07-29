@@ -11,7 +11,7 @@
 # Engine complements never contain vertex 1 (the anchor), so regions and the
 # scoring panel are sampled from vertices 2..43.
 #
-# Usage: Rscript Paley23Decide/gen_duals.R <nsolves> <out.rds> [seed]
+# Usage: Rscript gen_duals.R <nsolves> <out.rds> [seed]
 # Prints, every 10 solves: behavioral novelty (distinct restricted behavior on
 # the panel), weight-multiset novelty (Aut-invariant), and the recovery curve
 # mean(bestW/tau*) — tau* itself recovers ~94% of exact minback (tri_lp.R).

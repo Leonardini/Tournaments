@@ -2,8 +2,8 @@
 # alpha*=2/3, McG=5): automorphism group (by closure), circulant connection set, double-regularity,
 # and the exact alpha*=2/3 dual certificate (predictability obstacle subgraph).
 suppressMessages({ library(igraph); library(lpSolve); library(rcdd); library(gmp) })
-source("ObsoleteSourceFiles/alpha_star.R")
-e <- new.env(); load("Tournaments/regulartournaments11.RData", envir = e); A <- e$allGraphs[[1068]]; n <- nrow(A)
+source("../common/alpha_star.R")
+e <- new.env(); load("../data/regulartournaments11.RData", envir = e); A <- e$allGraphs[[1068]]; n <- nrow(A)
 g <- graph_from_adjacency_matrix(A, mode = "directed")
 gens <- automorphism_group(g)                             # 1-based permutations
 
@@ -58,5 +58,5 @@ sd <- integer(n); si <- integer(n); for (k in supp){ sd[af[k]]<-sd[af[k]]+1L; si
 cat("  support subgraph out-deg per vertex (0-based):", paste(sd, collapse=" "), "\n")
 cat("  support subgraph  in-deg per vertex (0-based):", paste(si, collapse=" "), "\n")
 saveRDS(list(A=A, S=S, lab=lab, aut=length(grp), supp_from=af[supp]-1, supp_to=at[supp]-1, mu=as.character(yq[supp])),
-        "Paley23Decide/ce1068_analysis.rds")
-cat("\nsaved Paley23Decide/ce1068_analysis.rds\n")
+        "ce1068_analysis.rds")
+cat("\nsaved ce1068_analysis.rds\n")

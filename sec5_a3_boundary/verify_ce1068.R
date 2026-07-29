@@ -2,9 +2,9 @@
 # counterexample: regular n=11 tournament allGraphs[[1068]], claimed alpha*=2/3 & not 3-realizable.
 # Recomputes everything from the raw tournament (no cross-file index alignment) to rule out off-by-one.
 suppressMessages({ library(lpSolve); library(rcdd); library(gmp) })
-source("ObsoleteSourceFiles/alpha_star.R")
+source("../common/alpha_star.R")
 IDX <- 1068
-e <- new.env(); load("Tournaments/regulartournaments11.RData", envir = e); A <- e$allGraphs[[IDX]]
+e <- new.env(); load("../data/regulartournaments11.RData", envir = e); A <- e$allGraphs[[IDX]]
 n <- nrow(A)
 cat(sprintf("=== allGraphs[[%d]] : n=%d ===\n", IDX, n))
 cat("out-degrees:", paste(rowSums(A), collapse=" "), " (regular iff all 5)\n")
@@ -31,6 +31,6 @@ cat(sprintf("alpha* == 2/3 exactly ? %s\n", as.bigq(astar) == as.bigq(2L,3L)))
 
 # ---- emit inmasks for the ILP realizability check (arc u->v => bit u set in inm[v]) ----
 inm <- sapply(1:n, function(v) sum(ifelse(A[,v]==1L, bitwShiftL(1L,(1:n)-1L), 0L)))
-writeLines(paste(inm, collapse=" "), "Paley23Decide/ce1068_inmask.txt")
-cat("\nwrote Paley23Decide/ce1068_inmask.txt (single tournament, for realize_k.py)\n")
+writeLines(paste(inm, collapse=" "), "ce1068_inmask.txt")
+cat("\nwrote ce1068_inmask.txt (single tournament, for realize_k.py)\n")
 cat("adjacency (row i, arc i->j where 1):\n"); for(i in 1:n) cat(" ", paste(A[i,],collapse=""), "\n")

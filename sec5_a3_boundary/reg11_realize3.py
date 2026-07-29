@@ -6,8 +6,8 @@
 # theorem says 3-realizable => alpha* >= 2/3, so any alpha*<2/3 MUST be NOT-3-realizable; a counterexample
 # is an alpha* >= 2/3 tournament that comes back NOT-3-realizable.
 import sys, cplex, time
-INM = sys.argv[1] if len(sys.argv) > 1 else "Paley23Decide/reg11_inmasks.txt"
-OUT = sys.argv[2] if len(sys.argv) > 2 else "Paley23Decide/reg11_realize3.txt"
+INM = sys.argv[1] if len(sys.argv) > 1 else "reg11_inmasks.txt"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "reg11_realize3.txt"
 OFFSET = int(sys.argv[3]) if len(sys.argv) > 3 else 0   # add to printed idx (parallel chunks)
 n, k, maj = 11, 3, 2
 pairs = [(u, v) for u in range(n) for v in range(u + 1, n)]

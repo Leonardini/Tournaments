@@ -2,7 +2,7 @@
 # (one per line: inm[v] = bitmask of in-neighbours u of v, arc u->v; n = #tokens). Uses the general
 # (no fix-0) oracle + rcdd/GMP exact LP + oracle re-verification, identical to reg11_alphastar.R.
 suppressMessages({ library(lpSolve); library(rcdd); library(gmp) })
-source("ObsoleteSourceFiles/alpha_star.R")   # maxweight_order (general DP)
+source("../common/alpha_star.R")   # maxweight_order (general DP)
 asp_full <- function(D, tol = 1e-9) {
   n <- nrow(D); a <- which(D == 1L, arr.ind = TRUE); af <- a[, 1]; at <- a[, 2]; E <- length(af)
   Wm  <- function(y) { W <- matrix(0, n, n); W[cbind(af, at)] <- y; W }

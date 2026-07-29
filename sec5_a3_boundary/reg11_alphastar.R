@@ -17,7 +17,7 @@
 # 3-realizable would refute it; one with alpha* < 2/3 is automatically non-3-realizable (consistent).
 
 suppressMessages({ library(lpSolve); library(rcdd); library(gmp) })
-source("ObsoleteSourceFiles/alpha_star.R")   # maxweight_order: general weighted-MAS DP (no fix-0)
+source("../common/alpha_star.R")   # maxweight_order: general weighted-MAS DP (no fix-0)
 
 # ---- float cutting plane on adjacency D (D[i,j]=1 => arc i->j); returns the converged cut set ----
 asp_full <- function(D, tol = 1e-9) {
@@ -72,9 +72,9 @@ exact_alpha <- function(D, tol = 1e-9) {
 # ------------------------------------------------------------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
 NMAX <- if (length(args) >= 1) as.integer(args[1]) else NA_integer_   # process first NMAX (NA=all)
-OUT  <- if (length(args) >= 2) args[2] else "Paley23Decide/reg11_alpha_results.rds"
+OUT  <- if (length(args) >= 2) args[2] else "reg11_alpha_results.rds"
 
-e <- new.env(); load("Tournaments/regulartournaments11.RData", envir = e); G <- e$allGraphs
+e <- new.env(); load("../data/regulartournaments11.RData", envir = e); G <- e$allGraphs
 N <- length(G); if (!is.na(NMAX)) N <- min(N, NMAX)
 cat(sprintf("regular tournaments on 11 vertices: processing %d of %d\n", N, length(G)))
 
