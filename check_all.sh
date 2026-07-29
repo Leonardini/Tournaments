@@ -37,6 +37,8 @@ check "sec4: T* has FAS 17 > HS3 16"        "minimum 3-cycle hitting set has 16 
       "cd sec4_fas_hs3 && Rscript make_tstar_figs.R; rm -f *.pdf"
 
 echo "${C}== sec5_a3_boundary (A(3) fails on the boundary) ==${Z}"
+check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" - \
+      "cd sec5_a3_boundary && Rscript verify_ce1068.R; rm -f ce1068_inmask.txt"
 check "sec5: cA3 not-3-real / 5-real (CP-SAT)" "k=3 (maj>=2): INFEASIBLE (proven)" - \
       "cd sec5_a3_boundary && python3 independent_realize3_cpsat.py"
 check "sec5: 47/47 obstacle certs (gmp-only)"  "STATIC (gmp-only) certification: 47/47 obstacles" - \
