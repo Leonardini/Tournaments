@@ -42,7 +42,8 @@ IBM CPLEX 22.1:
   free-solver twin (`independent_realize3_cpsat.py`, `cpsat_realize3_n10.py`,
   `cert_orbits_1068.py` respectively), so the claim is reproducible without CPLEX.
 - `sec6_bounds/ilp10/solve_ilp10.R`, `sec6_bounds/ilp10/ilp10_aggregate.R` — the n ≤ 10 ILP
-  cross-check; the headline n = 11 census is solver-free C.
+  cross-check (free CP-SAT twin: `sec6_bounds/ilp10/verify_5inducible.py`); the headline
+  n = 11 census is solver-free C.
 - `appendices/gen_duals.R`, `appendices/k_realizability_lp.R`, `appendices/minimum_set_cover.R`
   — obstacle-dual, predictability-LP and set-cover computations (CPLEX-only, for the appendices).
 
@@ -66,6 +67,10 @@ the level-≤ 1 shell with the **census identity check** (orbit count must equal
 the co-backing screen ⇒ **N(5) ≤ 43**. Needs ≤ 8 threads, ~5 GB RAM, ~50 GB scratch disk.
 `d0_reps.txt` (the δ = 0 orbit representatives) is the one committed input; every other table is
 regenerated.
+
+**Verify every section fast.** From the repo root, `./check_all.sh` (~1-2 min) runs each section's
+quick "check the result" step with only free tools (no HPC, no McKay download, no CPLEX) and reports
+PASS/FAIL per section; the single CPLEX-gated check is skipped when CPLEX is absent.
 
 ## Manifest — claim → verifier
 

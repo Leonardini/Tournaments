@@ -613,7 +613,7 @@ findIsomorphicCopies = function(targetGraphs, allGraphs, specialIndices = NULL) 
     }
   }
   if (!is.null(specialIndices)) {
-    Mat = Mat[, nonMargin1Indices]
+    Mat = Mat[, specialIndices]
   }
   Mat
 }

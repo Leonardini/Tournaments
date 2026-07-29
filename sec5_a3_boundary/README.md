@@ -27,6 +27,8 @@
 - `reg11_realize3.py` — the k = 3 ILP applied across the census (CPLEX; see above).
 
 *n = 10 census (9,733,056 tournaments → 1,013 counterexamples)*
+- `n10_prefilter.R` — hereditary screen over the order-10 catalogue: keeps only tournaments whose ten 9-vertex subs are all 3-realizable (the minimal counterexample candidates), matching against the shipped `../data/n9_obstacle_keys.rds` (17,674 non-3-realizable n = 9 keys).
+- `extract_gidx_inm.py` — builds the `.inm` / `.gidx` files the steps below consume, from `tournaments10.txt` + a sorted index list.
 - `alpha_fast.c` — fast **float** α\* filter (GLPK master LP + C MAS DP) classifying α\* = 2/3 vs < 2/3.
 - `batch_verify_alpha_n10.R` — exact rational confirmation that each survivor has α\* = 2/3.
 - `n10_realize3.py` — **CPLEX** k = 3 ILP over a chunk, deciding 3-realizability.
@@ -80,6 +82,10 @@ Rscript reg11_alphastar.R                        # all 1,223; optional: NMAX OUT
 # 3-realizability across the census (CPLEX): python3 reg11_realize3.py reg11_inmasks.txt reg11_realize3.txt
 
 # --- n = 10 census (9,733,056 tournaments) ---
+# the .inm/.gidx inputs below are built from McKay's order-10 catalogue (tournaments10.txt, 447 MB):
+#   Rscript n10_prefilter.R tournaments10.txt cand.idx 0            # hereditary screen -> candidate indices
+#   sort -n cand.idx > cand.sorted
+#   python3 extract_gidx_inm.py tournaments10.txt cand.sorted n10_ce   # -> n10_ce.inm, n10_ce.gidx
 cc -O2 -o alpha_fast alpha_fast.c -I/opt/homebrew/include -L/opt/homebrew/lib -lglpk
 ./alpha_fast chunk00.inm                         # fast float filter: "idx MAS alpha"
 Rscript batch_verify_alpha_n10.R n10_ce.inm n10_ce.gidx n10_ce_astar.txt   # exact 2/3 confirm
