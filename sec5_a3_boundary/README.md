@@ -116,3 +116,61 @@ Rscript make_reversal_cex_figs.R                  # -> ReversalCEX_{A,B,C,D}.pdf
 - **cA6 (`cert9.c`)** — per-tournament CSP; runtime depends on the input list size (fast per line, with stderr progress every 1,000). Prints `Y <line>`/`N <line>` and a final `total N: cert9-SAT Y, UNSAT U` — a `Y` confirms a 9-voter 2/3-certificate exists.
 
 - **Figures** — seconds each. `make_cA3_fig.R` prints `cA3 checks passed: tournament, regular (out-deg 5), all 55 arcs tight at 4/6 = 2/3` and `cA3.pdf written`. `make_reversal_cex_figs.R` prints one `ReversalCEX_X written; forced arc u -> v` line per case, writing four PDFs.
+
+---
+
+# Non-margin-1 obstacle census (exact-coverage predictability α⁼)  — `enumerate_nm1_supports.R` et al.
+
+**What it does.** For the **254** tournaments on `n = 9` that are 3-inducible **but not with margin 1**
+(Appendix G.2), it produces the *complete* obstacle census, certifies every obstacle's
+exact-coverage predictability `α⁼ = p/q < 2/3` **solver-free** (`gmp` only), and computes the minimum
+set cover. Here the inducibility LP's optimal duals are **signed** (the "exact-coverage variant" of
+B.7), so an obstacle is the support of an *extreme optimal signed dual*.
+
+**Results.** 254 tournaments → **72 distinct extreme-dual obstacle classes** (of which **54** are
+inclusion-minimal supports in the B.7 sense — carried as the `inclusion_minimal` flag on each class);
+all 72 exactly certified `α⁼ = p/q < 2/3`, taking the **11** values
+`21/32 23/35 25/38 27/41 29/44 31/47 35/53 37/56 39/59 41/62 45/68`; **minimum set cover = 25**
+(CPLEX-optimal, and optimal over both the 72- and 54-class catalogues).
+
+**Antichain caveat.** B.7's "the solutions form an antichain = inclusion-minimal supports" is correct
+**per tournament** but does **not** hold for the pooled catalogue: the 54 inclusion-minimal classes
+have 14 cross-tournament isomorphic containments (the 72 extreme-dual classes have 51), because
+inclusion-minimality is local and `α⁼` is anti-monotone along containment. See
+`Manuscript/ObstacleAntichain_RevisionNote.md`. `nm1_containment.R` reports all of this.
+
+**Files.**
+- `enumerate_nm1_supports.R` — the enumerator (the one solver step besides minting). Exact vertex
+  enumeration of each tournament's signed optimal-dual face: exact per-arc ranges (`rcdd`) →
+  flex/core split → range-witness saturation (bounds the face so the box is non-binding) → exact VE
+  of the low-dim flex polytope by **lrs** (reverse search; `scdd` fallback) → vertex-witness
+  saturation. Writes the per-tournament raw output and the deduplicated catalogue
+  `../data/n9_nm1_obstacle_catalog.rds` (each class: `alpha`, `D`, `key`, `inclusion_minimal`).
+  Resumable (banks each tournament); `NM1_DATA`, `LRS_BIN`, `NM1_CATALOG` are env-overridable.
+- `mint_nm1_obstacle_certs.R` — mints the exact primal + **signed**-dual certificate for each of the
+  72 classes (`rcdd` + `gmp`; float column-gen seed, exact confirmation) →
+  `n9_nm1_obstacle_certs.rds`. This is the only solver step; its output is re-checked **solver-free**
+  by `verify_nm1_obstacle_certs.R`, so `rcdd`/CPLEX are not in the trust path.
+- `verify_nm1_obstacle_certs.R` — **solver-free** static checker (`gmp` only): primal `x ≥ 0`,
+  `Σx = 1`, **exact-equality** coverage `p/q` (⇒ `α⁼ ≥ p/q`); signed `y`, `Σy = 1`, exact signed
+  Held–Karp weighted-MAS `≤ p/q` (⇒ `α⁼ ≤ p/q`); asserts `p/q < 2/3`. No LP/cdd/CPLEX.
+- `nm1_set_cover.R` — containment matrix (igraph vf2 non-induced monomorphism) + minimum set-cover
+  ILP (CPLEX) → `../data/n9_nm1_obstacle_cover.rds` (25 classes).
+- `nm1_containment.R` — the containment poset / antichain analysis (extreme-dual vs inclusion-minimal;
+  anti-monotonicity; cover = antichain of minimal obstacles).
+- Data: `../data/n9_margin1only_tournaments.rds` (the 254 tournaments),
+  `../data/n9_nm1_obstacle_catalog.rds` (catalogue), `../data/n9_nm1_obstacle_cover.rds` (cover),
+  `n9_nm1_obstacle_certs.rds` (certs).
+
+**Dependencies.** R with `igraph`, `rcdd`, `gmp`, `Rcplex`; the **lrs** binary (lrslib) for the
+enumerator (point `LRS_BIN` at it). Only `gmp` is needed to re-check the certificates.
+
+**How to run.**
+```sh
+Rscript verify_nm1_obstacle_certs.R n9_nm1_obstacle_certs.rds   # gmp-only: 72/72, all α⁼ = p/q < 2/3
+Rscript nm1_containment.R                                       # 72 extreme-dual / 54 inclusion-minimal; cover antichain
+Rscript nm1_set_cover.R                                         # rebuild containment + 25-class cover (CPLEX)
+# regenerate from scratch (needs lrs + rcdd):
+LRS_BIN=/path/to/lrs Rscript enumerate_nm1_supports.R "1:254" nm1_face_out.rds   # -> catalogue
+Rscript mint_nm1_obstacle_certs.R                              # -> n9_nm1_obstacle_certs.rds
+```
