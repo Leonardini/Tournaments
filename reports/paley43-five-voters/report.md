@@ -5,7 +5,9 @@
 
 ![Level-0 screen funnel](images/fig1_level0_funnel.png)
 
-That is the paper's central computational claim, reproduced. Read it bottom-up: a five-voter realization of the Paley tournament on 43 vertices would require two of its "orders" to disagree in completely non-overlapping places. Among all 157 trillion pairs available to it, **not one** qualifies. The nearest miss still overlaps in 68 places.
+That is the paper's central computational claim, reproduced. Read it bottom-up: a five-voter realization of the Paley tournament on 43 vertices would require two of its "orders" to disagree in completely non-overlapping places. Among all 157 trillion pairs available to it, **not one** qualifies.
+
+The figure shows the level-0 shell, which is where this reproduction started. It finished somewhere considerably larger: the **full level-≤1 shell**, 1,662,696,609 orders, with all **4,376,325,129** (rep, pool) pairs checked and `TRUE_DISJOINT = 0` — every count matching the paper exactly. That is the whole §7 result, rebuilt from scratch on a laptop.
 
 ## The question
 
@@ -150,32 +152,36 @@ Three, none of which touches a result. Listed because two cost a reader time and
 | `sec5_a3_boundary/README.md`, *What to expect* | states `analyze_ce1068.R` prints `doubly-regular (all==3): TRUE`; it prints `FALSE`, correctly | misleading, but the verifier is right — the fix belongs in the README, not the script |
 | paper, Appendix A.4 | `min_overlap = 68` does not say which run mode produced it; the shipped default (automorphism-reduced) gives 71, and only `POOLVSPOOL=1` gives 68 | a reader running the tool as shipped cannot reconcile the number |
 
-**Partial — MAS(Paley43) ≤ 543, and the level-1 layer.** Both need the q = 43 δ ≤ 2 layer tables, documented at ~48 GB of scratch and confirmed by the engine's own Burnside ceiling (48.28 GB). This machine has had **40–43 GB free on a 96 %-full boot volume**, so the build was not attempted — filling that volume is a real hazard, not a budget question. Consequently:
+**Aligned — the full level-≤1 shell.** What was partial for most of the day is now complete. `S7-D` rebuilt the q = 43 δ≤2 layer tables from scratch (60 GB, 23 layers) and ran the package's own driver end to end. Both gaps closed:
 
-- MAS ≥ 543 is established here independently; MAS ≤ 543 rests on the paper's certification.
-- The screen was run exhaustively on **level 0** (19,651 orbits, 17.7 M orders). The full proof needs **level ≤ 1** (1,841,303 orbits, 1.66 B orders) — about 93× more. What is established is that no 5-realization can have *both* top voters at level 0.
+| | paper | observed |
+|---|---|---|
+| MAS(Paley43) | 543 | **543** — certified both ways by the join over the complete shell |
+| level-≤1 orbits | 1,841,303 | **1,841,303** — census identity × 903 = 1,662,696,609 enforced |
 
-A node for the complete proof, `S7-D`, was **built and attempted three times, and did not complete**. It runs the package's own `reproduce_paley43.sh` end to end, with a pre-flight refusing to start below 60 GB free and a disk watchdog that aborts before the volume is endangered, keeping partial layer tables in scratch so a later run resumes. **17 of its 22 layers are banked** (4.6 GB); a future run picks up at layer 17.
-
-The blocker moved during the day, and the distinction matters. In the morning it was **disk**: 40 GB free against a ~48 GB requirement. That was cleared — thinning Time Machine local snapshots to the 3 newest plus an external backup took free space to 95 GB, and relieving the volume let the swap file shrink from 33.8 GB to 9.2 GB alongside it. By the afternoon the blocker was **RAM**. The first two attempts died on defects in this reproduction's own watchdog (a swap-growth budget smaller than the build's documented ~5 GB footprint; then a process-group kill that reaped the shell but not `dp43`, leaving an orphan that starved the next attempt). Both were fixed and verified. The third attempt was killed correctly: swap grew 6.52 GB while the run held 6.26 GB, roughly one-for-one, at a moment when the machine had **0.07 GB of free physical RAM** of 24 GB, with 9.47 GB compressed and 28.6 GB already swapped under an unrelated 6.64 GB job. With no free physical memory, every GB the build allocates displaces a GB to swap, so the watchdog was enforcing precisely the rule it exists for.
-
-What the node needs is therefore not a code change but ~6–9 GB of genuinely free RAM for 2–4 h — an overnight run, or a pause of the competing workload.
-
-**Aligned — §6, N(5) ≥ 12, at full scale.** The n = 11 census completed over all D₁₁ = 903,753,248 tournaments (256 gentourng slices, 7 workers, **5 h 51 m wall / 41.0 core-hours**), solver-free. Every line of the paper's aggregate matched exactly:
+And every count of the Appendix A.3 screen matched exactly:
 
 | quantity | paper | observed |
 |---|---|---|
-| total tournaments | 903,753,248 (= D₁₁) | **903,753,248** |
-| margin-1 3-inducible | 362,587,120 | **362,587,120** |
-| 3-inducible, not margin-1 | 20,038,128 | **20,038,128** |
-| not 3-inducible | 521,128,000 | **521,128,000** |
-| of those, margin-1 5-inducible | 521,128,000 | **521,128,000** |
-| witnesses independently verified | all | **521,128,000** |
-| residual needing the ILP | 0 | **0** |
+| distinct rmasks *M* | 4,709,640 | **4,709,640** |
+| orders in the shell | 1,662,696,609 | **1,662,696,609** |
+| candidate rmask-pairs | 5,092,111 | **5,092,111** |
+| dangerous rmasks | 678,686 | **678,686** |
+| dangerous pool orders *K* | 347,694,990 | **347,694,990** |
+| largest rmask group | 186,362 | **186,362** |
+| **(rep, pool) pairs checked** | **4,376,325,129** | **4,376,325,129** |
+| **TRUE_DISJOINT** | **0** | **0** |
 
-`n11_aggregate.sh` passed all of its own guards — 256 slices present and internally consistent, the three stage tallies mutually consistent per slice, and `COMPLETENESS CHECK PASSED: total == D_11 == 903,753,248` — ending in `=> every 11-vertex tournament is 5-inducible: N(5) >= 12 [PROVEN, no ILP needed]`. The ILP fallback was never invoked.
+```
+PROVED: no two delta<=1 orders of Paley(43) have disjoint double-back sets.
+By co-backing + fwd-counting, Paley(43) is NOT 5-realizable  =>  N(5) <= 43.
+```
 
-Two operational notes. The run is recorded `failed` for a harness reason only: the census and aggregate both completed and printed the verdict, then the script died on its own EXIT trap, where `kill 0` signals the whole process group including the script itself. And the throughput tracked machine contention closely — 0.42 slices/min while unrelated jobs drove swap to 33 GB, recovering to 0.67 once that eased. The projection this reproduction made from n = 9 scan throughput (~11 core-hours) was 4× optimistic against the true 41; `cert_m1k5` dominates at n = 11, where 58 % of tournaments are non-3-inducible versus 9.2 % at n = 9. The package's documented 4.5–5.5 h on 8 uncontended cores is the reliable guide.
+**What it cost, and the one thing that mattered.** Seven attempts; six died. Two on defects in this reproduction's own watchdog — a swap-growth budget smaller than the workload's documented footprint, then a process-group kill that reaped the shell but orphaned `dp43`, whose surviving process starved the next attempt. One on an RSS cap that counted mmapped page cache as memory pressure (a 2 GB read-only mmap reads 2.01 GB of RSS but 8.7 MB of `phys_footprint`). One on a disk gate demanding 60 GB when 37 GB was already banked. Two on genuine memory exhaustion.
+
+The fix that mattered was a single documented environment variable: **`CHUNKMB=2`**. At the default 16, `runbuf` + the 142-buffer freelist + the master's slack come to ~6.4 GB of pure batching overhead, and layer 20 peaked at **26 GB on a 24 GB machine**. At `CHUNKMB=2` the same layer completed at 12 GB and layer 22 at 9.32 GB. `CHUNK` only controls how records are grouped through the sort/merge, so layer contents are identical — it trades merge passes for memory. The author confirms the same lever is what eventually got the equivalent Paley(47) build banked on their cluster.
+
+Worth noting for the package: the driver documents its envelope as "≤ 8 threads, ~5 GB RAM, ~50 GB disk". Disk is accurate; **RAM at the deep layers is 5× that with default chunking**, and a reader sizing a machine against ~5 GB will be surprised.
 
 **Not attempted.** The §5 n = 10 census (9,733,056 → 1,013 counterexamples, CPU-hours), cA6's 9-voter certificate (its input bitstring is not shipped), and the appendix CPLEX-only tools (`gen_duals.R` needs `cert_pool.R`, which the package does not include).
 
@@ -183,7 +189,7 @@ Two operational notes. The run is recorded `failed` for a harness reason only: t
 
 | claim | assessment |
 |---|---|
-| Paley(43) not 5-realizable ⇒ N(5) ≤ 43 | **partially aligned** — the obstruction reproduced exhaustively on the level-0 shell (TRUE_DISJOINT = 0, twice, in independent modes, with the coverage control firing); level 1 and the MAS upper bound are disk-blocked |
+| **Paley(43) not 5-realizable ⇒ N(5) ≤ 43** | **aligned** — reproduced end to end: layer tables rebuilt, MAS = 543 certified both ways, level-≤1 shell census-verified, TRUE_DISJOINT = 0 over 4,376,325,129 pairs |
 | MAS engine certification (q = 7…31) | **aligned** — 5/5 exact |
 | level-0 census 19,651 × 903 = 17,744,853 | **aligned** — re-derived independently |
 | G-invariance + triangle orbit structure | **aligned** — 0 violations / 1.6 M checks |
@@ -195,10 +201,9 @@ Two operational notes. The run is recorded `failed` for a harness reason only: t
 | §5 47/47 and 72/72 solver-free obstacle certificates | **aligned** |
 | §3 MHP counterexample, min-weight FAS = 5 unique | **aligned** |
 | §6 N(5) ≥ 12 (n = 11 census) | **aligned** — all 903,753,248 tournaments, every tally line exact |
-| §7 full level-≤ 1 shell (MAS ≤ 543 + level-1 layer) | **not completed** — attempted 3x, 17/22 layers banked; blocked by available RAM, not by the node |
 | §5 n = 10 census; cA6 | **not attempted** |
 
-Across all nodes: **53 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute, excluding the n = 11 census's 5 h 51 m: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
+Across all nodes: **59 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim).** Total compute, excluding the n = 11 census's 5 h 51 m: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
 
 What a full-scale reproduction still needs is modest and specific: **~15 GB more free disk**. With ~50 GB of scratch, `./reproduce_paley43.sh` rebuilds the δ ≤ 2 layer tables (~hours), enforces the census identity 1,841,303 × 903 = 1,662,696,609, and runs the same screen over the level-≤ 1 shell — closing both the MAS upper bound and the level-1 layer. Every other component of the proof is reproduced here.
 
