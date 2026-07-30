@@ -1,114 +1,169 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# S7-C — the screen's soundness controls, and the min_overlap divergence.
-#                                                            [HEADLINE LINE, step 3]
+# S7-D — the full level-<=1 shell: the complete Paley(43) proof.  [HEADLINE LINE, step 4]
 #
-# S7-B reproduced TRUE_DISJOINT = 0 over the complete level-0 shell but read
-# min_overlap = 71 where Appendix A.4 reports 68. Three controls run here; the second
-# is a direct test of why.
+# S7-A certified the MAS engine and established MAS >= 543 independently. S7-B ran the
+# screen exhaustively but only on the level-0 shell (17.7 M orders). S7-C showed the
+# screen's safeguards hold. Two gaps remain, and both need the q = 43 layer tables:
 #
-#  1. POSITIVE-DETECTION CONTROL (DBTEST=1). Replaces the full 3311-bit DB by the razor
-#     triangles only. Then every razor-disjoint candidate is disjoint by construction, so
-#     seedcount MUST equal checked. This is the negative control for the whole screen: it
-#     proves the detection path fires and coverage is complete, so TRUE_DISJOINT = 0 means
-#     "looked at every candidate and found none", not "never looked".
-#     Appendix A.4 at level 0: 333,809 = 333,809.
+#   MAS <= 543          only the dp43 join over the full delta <= 2 shell certifies it
+#   the level-1 layer   1,821,652 further orbits — 93x more orders than level 0
 #
-#  2. AUT-REDUCTION-FREE CROSS-CHECK (POOLVSPOOL=1). Both sides range over the full
-#     G-closed pool, dropping the factor-903 one-side reduction of §6.2 entirely, so
-#     TRUE_DISJOINT = 0 is re-established without that lemma.
-#     It also tests the min_overlap hypothesis. A zero overlap survives the reduction
-#     (DB-overlap 0 => rmask-overlap 0, and §6.2 carries a zero through sigma), which is
-#     why the CLAIM is unaffected. But razor-disjointness itself is NOT G-invariant —
-#     sigma permutes triangles, not W-internal triangles — so the pool-vs-pool candidate
-#     set is strictly different, and a pair with overlap 68 can be a candidate here while
-#     its Aut-reduced counterpart shares a razor triangle and is never scored.
+# This node runs the package's own driver `sec7_paley43/reproduce_paley43.sh` unchanged,
+# stages 0-4, which does both and ends in the proof banner. Reference figures it must hit:
+#   certified MAS = 543 · delta<=1 orbit count = 1,841,303 (x 903 = 1,662,696,609 orders)
+#   level-<=1 screen: TRUE_DISJOINT = 0 over 4,376,325,129 (rep, pool) pairs   [App. A.3]
 #
-#  3. G-INVARIANCE OF DB-OVERLAP (repro/verify_ginv.c, written for this reproduction).
-#     The sole property the reduction rests on, re-derived from scratch and checked
-#     exhaustively over all 903 sigma, plus the triangle orbit structure of Appendix A.4.
+# DISK IS THE BINDING CONSTRAINT, not CPU or RAM (~8 threads, ~5 GB resident).
+# The layer tables are ~48 GB — the engine's own Burnside ceiling says 48.28 GB and the
+# build approaches it. Two guards, because filling this boot volume is the hazard:
+#   * a pre-flight check that refuses to start below MIN_FREE_GB;
+#   * a disk watchdog that aborts the build if free space falls under ABORT_FREE_GB,
+#     leaving the partial tables in place so a later run resumes rather than restarts.
+# The tables live in $SCRATCH (via a symlink at the path the driver expects) so that a
+# resumed run reuses them: `dp43 layers` records each finished layer in its manifest and
+# skips it on the next pass, and stage 2 skips entirely once layer 22 is recorded.
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
 
+MIN_FREE_GB="${MIN_FREE_GB:-60}"      # refuse to start below this
+ABORT_FREE_GB="${ABORT_FREE_GB:-8}"   # abort mid-build below this
+
+free_gb() { df -g "$1" | tail -1 | awk '{print $4}'; }
+
 sysinfo
-watchdog_start
-trap watchdog_stop EXIT
 
-banner "build"
-cc -O3 -march=native -pthread -o "$SCRATCH/razor_screen" sec7_paley43/razor_screen.c
-cc -O3 -march=native          -o "$SCRATCH/verify_ginv"  repro/verify_ginv.c
-echo "built razor_screen, verify_ginv"
+banner "pre-flight: disk"
+FREE=$(free_gb "$SCRATCH")
+echo "  scratch            $SCRATCH"
+echo "  free on its volume ${FREE} GB"
+echo "  required to start  ${MIN_FREE_GB} GB   (48 GB of layer tables + join/enum + margin)"
+metric free_gb_at_start "$FREE"
+if [ "${FREE:-0}" -lt "$MIN_FREE_GB" ]; then
+  cat >&2 <<EOF
 
-f() { sed -n "s/.*[ ]$2=\([0-9-]*\).*/\1/p" <<<"$1"; }
-eq() { [ "$1" = "$2" ] && echo aligned || echo divergent; }
+S7-D not started: only ${FREE} GB free, needs ${MIN_FREE_GB} GB.
 
-# ---------------------------------------------------------------------------
-banner "1. positive-detection control (DBTEST=1) — must give seedcount == checked"
-cd sec7_paley43
-t0=$SECONDS
-MCAP=300000 DBTEST=1 SEEDCAP=1 "$SCRATCH/razor_screen" d0_reps.txt 1 24 0 "$THREADS" 2>&1 | tee "$SCRATCH/dbtest.out"
-dbt_s=$((SECONDS - t0))
-cd "$REPRO_ROOT"
-r1=$(grep '^RESULT ' "$SCRATCH/dbtest.out" | tail -1)
-d_checked=$(f "$r1" pairs_checked)
-d_seeds=$(grep -o 'TRUE-DISJOINT=[0-9]*' "$SCRATCH/dbtest.out" | tail -1 | cut -d= -f2)
-metric dbtest_checked "$d_checked"; metric dbtest_seeds "$d_seeds"; metric dbtest_seconds "$dbt_s"
-echo "  checked=$d_checked  seeds=$d_seeds"
-claim "sec7.coverage-control" "seedcount == checked == 333809 at level 0" \
-      "seeds=$d_seeds, checked=$d_checked" \
-      "$([ "$d_seeds" = "$d_checked" ] && [ "$d_checked" = 333809 ] && echo aligned || echo divergent)"
-
-# ---------------------------------------------------------------------------
-banner "2. Aut-reduction-free cross-check (POOLVSPOOL=1)"
-cd sec7_paley43
-t0=$SECONDS
-MCAP=300000 POOLVSPOOL=1 "$SCRATCH/razor_screen" d0_reps.txt 1 24 0 "$THREADS" 2>&1 | tee "$SCRATCH/pvp.out"
-pvp_s=$((SECONDS - t0))
-cd "$REPRO_ROOT"
-r2=$(grep '^RESULT ' "$SCRATCH/pvp.out" | tail -1)
-p_checked=$(f "$r2" pairs_checked); p_td=$(f "$r2" TRUE_DISJOINT); p_mo=$(f "$r2" min_overlap)
-metric poolvspool_pairs_checked "$p_checked"
-metric poolvspool_true_disjoint "$p_td"
-metric poolvspool_min_overlap "$p_mo"
-metric poolvspool_seconds "$pvp_s"
-echo "  pairs_checked=$p_checked  TRUE_DISJOINT=$p_td  min_overlap=$p_mo"
-claim "sec7.autfree-true-disjoint" "TRUE_DISJOINT = 0 without the Aut reduction" \
-      "TRUE_DISJOINT = $p_td over $p_checked full-pool pairs" "$(eq "$p_td" 0)"
-claim "sec7.min-overlap-source" "min overlap = 68 (Appendix A.4)" \
-      "Aut-reduced 71 (S7-B) vs pool-vs-pool $p_mo" "$(eq "$p_mo" 68)"
-
-banner "min_overlap by mode"
-printf '  %-28s %s\n' "Aut-reduced (S7-B)" "71"
-printf '  %-28s %s\n' "pool-vs-pool (this node)" "$p_mo"
-printf '  %-28s %s\n' "paper, Appendix A.4" "68"
-if [ "$p_mo" = 68 ]; then
-  echo "  => the published 68 is the pool-vs-pool figure. The two modes screen different"
-  echo "     candidate sets because razor-disjointness is not G-invariant; both give"
-  echo "     TRUE_DISJOINT = 0, so the claim is unaffected either way."
-else
-  echo "  => pool-vs-pool does not explain the 68 either; min_overlap remains unresolved."
-  echo "     TRUE_DISJOINT = 0 reproduces in both modes, so the claim is unaffected."
+The q=43 delta<=2 layer tables are ~48 GB (\`dp43 burnside 43\` puts the ceiling at
+48.28 GB). Free about $(( MIN_FREE_GB - FREE )) GB more and re-launch this same node —
+nothing else about it changes, and any layers already built are reused.
+EOF
+  exit 1
 fi
 
+# keep the expensive tables outside the per-run clone so a partial build resumes
+PERSIST="$SCRATCH/dp43run43"
+mkdir -p "$PERSIST"
+rm -rf sec7_paley43/dp43run43
+ln -s "$PERSIST" sec7_paley43/dp43run43
+echo "  layer tables       $PERSIST  (symlinked as sec7_paley43/dp43run43)"
+if [ -f "$PERSIST/manifest.txt" ]; then
+  echo "  resuming: manifest already records $(grep -c '^L ' "$PERSIST/manifest.txt") layer entries"
+  du -sh "$PERSIST" | awk '{print "  tables on disk so far: " $1}'
+fi
+# reuse a previously canonicalised shell if one survived
+[ -f "$PERSIST/delta1_reps.txt" ] && cp "$PERSIST/delta1_reps.txt" sec7_paley43/delta1_reps.txt
+
+watchdog_start
+# disk watchdog: abort before the volume is endangered, keeping the partial build
+( set +e +o pipefail
+  root=$$
+  while :; do
+    sleep 60
+    f=$(free_gb "$SCRATCH"); f=${f:-0}
+    printf 'DISK  %s GB free  (tables %s)\n' "$f" "$(du -sh "$PERSIST" 2>/dev/null | awk '{print $1}')"
+    if [ "$f" -lt "$ABORT_FREE_GB" ]; then
+      echo "DISKWATCH: only ${f} GB free — aborting the build to protect the volume (partial tables kept for resume)" >&2
+      kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"
+      exit 1
+    fi
+  done ) &
+DW_PID=$!
+trap 'watchdog_stop; kill "$DW_PID" 2>/dev/null || true' EXIT
+
 # ---------------------------------------------------------------------------
-banner "3. G-invariance of DB-overlap + triangle orbit structure"
-"$SCRATCH/verify_ginv" sec7_paley43/d0_reps.txt 60 2>&1 | tee "$SCRATCH/ginv.out"
-gi=$(grep -c 'verify_ginv: ALL CHECKS PASSED' "$SCRATCH/ginv.out" || true)
-viol=$(sed -n 's/.*violations: \([0-9]*\).*/\1/p' "$SCRATCH/ginv.out" | tail -1)
-comb=$(sed -n 's/.*combinations tested: \([0-9]*\).*/\1/p' "$SCRATCH/ginv.out" | tail -1)
-metric ginv_combinations_tested "$comb"; metric ginv_violations "$viol"
-claim "sec7.triangle-orbits" "5 orbits of sizes 903,903,903,301,301; 602 triangles with nontrivial stabiliser" \
-      "$([ "$gi" = 1 ] && echo 'exact match' || echo 'not confirmed')" \
-      "$([ "$gi" = 1 ] && echo aligned || echo divergent)"
-claim "sec7.g-invariance" "DB-overlap size is G-invariant (checked over all 903 sigma)" \
-      "$viol violations over $comb (sigma, pair) combinations" "$(eq "$viol" 0)"
+banner "reproduce_paley43.sh — stages 0-4 (the package's own driver, unchanged)"
+t0=$SECONDS
+set +e
+( cd sec7_paley43 && THREADS="$THREADS" ./reproduce_paley43.sh ) 2>&1 | tee "$SCRATCH/paley43.out"
+rc=${PIPESTATUS[0]}
+set -e
+el=$((SECONDS - t0))
+kill "$DW_PID" 2>/dev/null || true
+echo
+echo "driver exited $rc after $((el / 60))m $((el % 60))s"
+metric wall_seconds "$el"
+metric driver_exit "$rc"
+[ -d "$PERSIST" ] && du -sh "$PERSIST" | awk '{print "peak layer tables on disk: " $1}'
+
+out="$SCRATCH/paley43.out"
+clean=$(sed $'s/\033\\[[0-9;]*m//g' "$out")
+
+# ---------------------------------------------------------------------------
+banner "claims"
+eq() { [ "$1" = "$2" ] && echo aligned || echo divergent; }
+
+# (1) MAS = 543 certified in both directions by the join over the delta<=2 shell
+mas=$(grep -o 'certified MAS = [0-9]*' <<<"$clean" | tail -1 | awk '{print $NF}')
+metric certified_mas "${mas:-none}"
+claim "sec7.mas-exact" "MAS(Paley43) = 543 (certified both ways)" \
+      "certified MAS = ${mas:-not reached}" "$(eq "${mas:-none}" 543)"
+
+# (2) the census identity on the level-<=1 shell
+orb=$(grep -o 'distinct_orbits=[0-9]*' <<<"$clean" | tail -1 | cut -d= -f2)
+cens=$(grep -c 'delta<=1 reps complete + census-verified' <<<"$clean" || true)
+metric delta1_orbits "${orb:-none}"
+claim "sec7.level1-census" "1,841,303 delta<=1 orbits (x 903 = 1,662,696,609 orders)" \
+      "${orb:-not reached} orbits$([ "$cens" = 1 ] && echo ', census identity enforced')" \
+      "$(eq "${orb:-none}" 1841303)"
+
+# (3) the delta=0 sanity pass and (4) the real level-<=1 screen
+d0=$(grep '^RESULT ' <<<"$clean" | head -1)
+d1=$(grep '^RESULT ' <<<"$clean" | tail -1)
+f() { sed -n "s/.*[ ]$2=\([0-9-]*\).*/\1/p" <<<"$1"; }
+d0_td=$(f "$d0" TRUE_DISJOINT)
+d1_td=$(f "$d1" TRUE_DISJOINT); d1_mo=$(f "$d1" min_overlap)
+d1_pairs=$(f "$d1" pairs_checked); d1_M=$(f "$d1" M); d1_K=$(f "$d1" K)
+d1_dang=$(f "$d1" dangerous); d1_cand=$(f "$d1" rmask_cand_pairs)
+metric delta0_true_disjoint "${d0_td:-none}"
+metric delta1_true_disjoint "${d1_td:-none}"
+metric delta1_min_overlap "${d1_mo:-none}"
+metric delta1_pairs_checked "${d1_pairs:-none}"
+metric delta1_distinct_rmasks "${d1_M:-none}"
+metric delta1_dangerous_rmasks "${d1_dang:-none}"
+metric delta1_dangerous_pool_orders "${d1_K:-none}"
+metric delta1_candidate_rmask_pairs "${d1_cand:-none}"
+
+claim "sec7.delta0-sanity" "TRUE_DISJOINT = 0 on the delta=0 pass" \
+      "TRUE_DISJOINT = ${d0_td:-not reached}" "$(eq "${d0_td:-none}" 0)"
+claim "sec7.level1-true-disjoint" "TRUE_DISJOINT = 0 on the full level-<=1 shell" \
+      "TRUE_DISJOINT = ${d1_td:-not reached} over ${d1_pairs:-?} (rep, pool) pairs" \
+      "$(eq "${d1_td:-none}" 0)"
+claim "sec7.level1-screen-counts" "M = 4,709,640 rmasks, 5,092,111 candidate pairs, 678,686 dangerous, K = 347,694,990, 4,376,325,129 pairs checked" \
+      "M = ${d1_M:-?}, ${d1_cand:-?} candidate pairs, ${d1_dang:-?} dangerous, K = ${d1_K:-?}, ${d1_pairs:-?} pairs checked" \
+      "$(eq "${d1_pairs:-none}" 4376325129)"
+
+proved=$(grep -c 'Paley(43) is NOT 5-realizable' <<<"$clean" || true)
+claim "sec7.N5-upper-bound" "Paley(43) is not 5-realizable => N(5) <= 43" \
+      "$([ "$proved" -ge 1 ] && echo 'PROVED banner reached' || echo 'not reached')" \
+      "$(eq "$([ "$proved" -ge 1 ] && echo 1 || echo 0)" 1)"
+
+# bank the canonicalised shell so a re-run need not redo canon_reps
+[ -f sec7_paley43/delta1_reps.txt ] && cp sec7_paley43/delta1_reps.txt "$PERSIST/delta1_reps.txt"
 
 banner "verdict"
 ok=1
-[ "$d_seeds" = "$d_checked" ] && [ "$d_checked" = 333809 ] || ok=0
-[ "$p_td" = 0 ] || ok=0
-[ "$gi" = 1 ] || ok=0
-echo "coverage control ${dbt_s}s | pool-vs-pool ${pvp_s}s | G-invariance OK=$gi"
-[ "$ok" = 1 ] || { echo "S7-C: a soundness control did not reproduce" >&2; exit 1; }
-echo "S7-C OK: coverage complete, TRUE_DISJOINT=0 holds without the Aut reduction, G-invariance exact"
+[ "$rc" = 0 ] || ok=0
+for pair in "${mas:-none} 543" "${orb:-none} 1841303" "${d0_td:-none} 0" "${d1_td:-none} 0"; do
+  set -- $pair; [ "$1" = "$2" ] || ok=0
+done
+[ "$proved" -ge 1 ] || ok=0
+if [ "$ok" = 1 ]; then
+  echo "S7-D OK: MAS = 543 certified, level-<=1 shell complete and census-verified,"
+  echo "         TRUE_DISJOINT = 0 over the whole shell => Paley(43) is not 5-realizable => N(5) <= 43"
+else
+  echo "S7-D: the full-shell proof did not complete (driver exit $rc)" >&2
+  grep -E 'FAIL|DISKWATCH|WATCHDOG:' <<<"$clean" | tail -5 >&2
+  exit 1
+fi
