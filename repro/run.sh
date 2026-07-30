@@ -1,55 +1,84 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# BASELINE NODE — package-wide fast verification.
+# S7-A — MAS engine certification + Paley(43) premises.   [HEADLINE LINE, step 1]
 #
-# Runs the repository's own quick verifier, check_all.sh: 11 self-checks spanning
-# §3-§7 plus the CPLEX set-cover demo. Establishes that this machine's toolchain
-# reproduces the package's shipped claims before any heavy node is launched.
+# The §7 proof stands on two premises:
+#   (i)  MAS(Paley43) = 543, so alpha* = 181/301 > 3/5 and the two top voters of any
+#        5-realization are forced to level <= 1;
+#   (ii) the engine that computes it is correct.
 #
-# Metric: PASS / SKIP / FAIL counts (target PASS=11, FAIL=0 — CPLEX is installed
-# here, so the normally-skipped Rcplex check should also run).
+# This node establishes (ii) at full published scale — the Appendix A.4 MAS gauntlet,
+# q = 19/23/31 against the known values 107/161/285, which check_all.sh does not run —
+# and the >= 543 half of (i) independently, from the one committed input d0_reps.txt,
+# with a verifier that shares no code with the package's engines.
+#
+# The <= 543 half needs the q=43 delta<=2 layer tables (~48 GB scratch) and is tracked
+# on a separate node; it is not attempted here.
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
 
 sysinfo
+watchdog_start
+trap watchdog_stop EXIT
 
-banner "check_all.sh — quick verification of every section"
-t0=$SECONDS
-set +e
-./check_all.sh 2>&1 | tee "$SCRATCH/check_all.out"
-set -e
-elapsed=$((SECONDS - t0))
+banner "build"
+cc -O3 -march=native -pthread -o "$SCRATCH/dp43" sec7_paley43/dp43.c
+cc -O3 -march=native -pthread -o "$SCRATCH/verify_d0" repro/verify_d0.c
+echo "built dp43, verify_d0"
 
-# strip the ANSI colouring check_all.sh emits before parsing
-out=$(sed $'s/\033\\[[0-9;]*m//g' "$SCRATCH/check_all.out")
-summary=$(printf '%s' "$out" | grep -E 'ALL CHECKS OK|SOME CHECKS FAILED' || true)
-np=$(printf '%s' "$out" | grep -c '^  PASS ' || true)
-ns=$(printf '%s' "$out" | grep -c '^  SKIP ' || true)
-nf=$(printf '%s' "$out" | grep -c '^  FAIL ' || true)
+# ---------------------------------------------------------------------------
+banner "1. DP self-tests against brute force (q = 7, 11)"
+# Each rebuilds canonicalization independently, checks fast==slow / idempotent /
+# Aut-invariant, then verifies the DP order pool equals brute force at several tau.
+for q in 7 11; do
+  mkdir -p "$SCRATCH/st$q"
+  "$SCRATCH/dp43" selftest $q "$SCRATCH/st$q" 2>&1 | tee "$SCRATCH/st$q.out"
+done
+s7=$(grep -c 'selftest q=7 PASSED'  "$SCRATCH/st7.out"  || true)
+s11=$(grep -c 'selftest q=11 PASSED' "$SCRATCH/st11.out" || true)
+claim "sec7.dp43-selftest-q7"  "pool == brute force, MAS(Paley7) = 14"  "$([ "$s7"  = 1 ] && echo 'PASSED' || echo 'not confirmed')" "$([ "$s7"  = 1 ] && echo aligned || echo divergent)"
+claim "sec7.dp43-selftest-q11" "pool == brute force, MAS(Paley11) = 35" "$([ "$s11" = 1 ] && echo 'PASSED' || echo 'not confirmed')" "$([ "$s11" = 1 ] && echo aligned || echo divergent)"
 
-banner "results"
-metric wall_seconds "$elapsed"
-metric checks_pass "$np"
-metric checks_skip "$ns"
-metric checks_fail "$nf"
+# ---------------------------------------------------------------------------
+banner "2. MAS gauntlet — certify the known values for q = 19, 23, 31"
+# Appendix A.4: "the MAS gauntlet reproduces brute-force q=7,11 and the known
+# MAS=107/161/285 for q=19/23/31". Runs the full layers->join->enum->close pipeline
+# at tau = the published MAS; the join step certifies the maximum both ways.
+declare -a GQ=(19 23 31) GMAS=(107 161 285)
+gok=0
+for i in 0 1 2; do
+  q=${GQ[$i]}; want=${GMAS[$i]}
+  d="$SCRATCH/g$q"; rm -rf "$d"; mkdir -p "$d"
+  echo "--- q=$q  tau=$want ---"
+  THREADS=$THREADS "$SCRATCH/dp43" all $q "$want" "$d" 2>&1 | tee "$SCRATCH/g$q.out"
+  got=$(grep -o 'certified MAS = [0-9]*' "$SCRATCH/g$q.out" | tail -1 | awk '{print $NF}')
+  got=${got:-none}
+  metric "mas_q$q" "$got"
+  claim "sec7.mas-gauntlet-q$q" "MAS(Paley$q) = $want" "MAS = $got" "$([ "$got" = "$want" ] && echo aligned || echo divergent)"
+  [ "$got" = "$want" ] && gok=$((gok+1))
+  du -sh "$d" | awk '{print "  layer tables on disk: " $1}'
+  rm -rf "$d"
+done
+metric gauntlet_q_certified "$gok/3"
 
-# The individual claims each quick check settles, as paper-value vs observed-value.
-verdict() { [ "$1" = 1 ] && echo aligned || echo divergent; }
-g() { printf '%s' "$out" | grep -qF -- "$1" && echo 1 || echo 0; }
+# ---------------------------------------------------------------------------
+banner "3. Independent re-derivation of the level-0 facts from the committed seed"
+"$SCRATCH/verify_d0" sec7_paley43/d0_reps.txt "$THREADS" 2>&1 | tee "$SCRATCH/vd0.out"
+vd0=$(grep -c 'verify_d0: ALL CHECKS PASSED' "$SCRATCH/vd0.out" || true)
 
-claim "sec3.mhp-min-weight-FAS"      "min-weight FAS = 5, unique"        "$(printf '%s' "$out" | grep -q '^  PASS sec3' && echo 'min-weight FAS = 5, unique' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec3')")"
-claim "sec4.Tstar-FAS-gt-HS3"        "FAS = 17 > 16 = HS3"              "$(printf '%s' "$out" | grep -q '^  PASS sec4' && echo 'FAS = 17 > 16 = HS3' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec4')")"
-claim "sec5.cA3-alpha-star"          "alpha* = 2/3 exactly (rational)"  "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 exact' && echo 'alpha* = 2/3 exactly' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 exact')")"
-claim "sec5.cA3-not-3-inducible"     "k=3 INFEASIBLE, k=5 FEASIBLE"     "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 not-3-real' && echo 'k=3 INFEASIBLE, k=5 FEASIBLE' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 not-3-real')")"
-claim "sec5.obstacle-certs-47"       "47/47 obstacles certified"        "$(printf '%s' "$out" | grep -q 'PASS sec5: 47/47' && echo '47/47 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 47/47')")"
-claim "sec5.nm1-certs-72"            "72/72 non-margin-1 certified"     "$(printf '%s' "$out" | grep -q 'PASS sec5: 72/72' && echo '72/72 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 72/72')")"
-claim "sec6.counting-bounds"         "N(5) <= 39 regular, <= 38 near-reg" "$(printf '%s' "$out" | grep -q 'PASS sec6: counting' && printf '%s' "$out" | grep -q 'PASS sec6: near-regular' && echo 'both tables assert clean' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec6: counting')" = 1 ] && [ "$(g 'PASS sec6: near-regular')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.dp43-selftest-q7-q11"    "MAS(7)=14, MAS(11)=35 == brute force" "$(printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(7)' && printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(11)' && echo 'both self-tests PASSED' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec7: certified MAS(7)')" = 1 ] && [ "$(g 'PASS sec7: certified MAS(11)')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.cpsat-gauntlet"          "GAUNTLET: PASS"                   "$(printf '%s' "$out" | grep -q 'PASS sec7: CP-SAT' && echo 'GAUNTLET: PASS' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec7: CP-SAT')")"
+claim "sec7.paley43-structure"   "C = 903 arcs, T = 3311 cyclic triangles, out-deg 21, 11 tri/arc, |Aut| = 903" \
+      "$([ "$vd0" = 1 ] && echo 'all structural constants match' || echo 'not confirmed')" \
+      "$([ "$vd0" = 1 ] && echo aligned || echo divergent)"
+claim "sec7.level0-census"       "19,651 orbits x 903 = 17,744,853 level-0 orders" \
+      "$([ "$vd0" = 1 ] && echo '19,651 canonical reps, all stabiliser-free => 17,744,853' || echo 'not confirmed')" \
+      "$([ "$vd0" = 1 ] && echo aligned || echo divergent)"
+claim "sec7.mas-lower-bound"     "MAS(Paley43) = 543; alpha* = 181/301 > 3/5; slack 6; top-two level <= 1" \
+      "$([ "$vd0" = 1 ] && echo 'MAS >= 543 confirmed independently (<= 543 needs the q=43 layer tables)' || echo 'not confirmed')" \
+      "$([ "$vd0" = 1 ] && echo partial || echo divergent)"
 
 banner "verdict"
-echo "$summary"
-echo "PASS=$np SKIP=$ns FAIL=$nf  in ${elapsed}s"
-[ "$nf" -eq 0 ] || { echo "BASELINE FAILED: $nf quick check(s) did not reproduce" >&2; exit 1; }
-echo "BASELINE OK: all $np quick checks reproduce on this machine ($ns skipped)"
+ok=$(( s7 + s11 + gok + vd0 ))
+echo "self-tests $((s7+s11))/2 | gauntlet $gok/3 | verify_d0 $vd0/1  => $ok/6"
+[ "$ok" -eq 6 ] || { echo "S7-A: $((6-ok)) premise check(s) did not reproduce" >&2; exit 1; }
+echo "S7-A OK: engine certified on q=7,11,19,23,31 and the level-0 premises re-derived independently"
