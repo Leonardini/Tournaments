@@ -39,6 +39,9 @@ CENSUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "n11_census.js
 
 
 def human(v):
+    if v >= 1e15:                       # beyond "trillion", plain powers of ten read better
+        e = int(f"{v:e}".split("e")[1])
+        return f"{v/10**e:.2f} x 10^{e}"
     for div, suf in ((1e12, "T"), (1e9, "B"), (1e6, "M"), (1e3, "k")):
         if v >= div:
             return f"{v/div:.4g}{suf}"
@@ -70,32 +73,32 @@ def save(fig, name):
 # runs 0f89ee57 (automorphism-reduced) and b560466d (pool vs pool)
 # =============================================================================
 def fig_funnel():
+    """The completed result: the full level-<=1 shell (run f6e968d1)."""
+    POOL = 1_662_696_609
     stages = [
-        ("Order pairs in the level-0 shell\nall pairs of the 17,744,853 MAS orders", 1.574e14),
-        ("Survive the razor filter\npool vs pool, no automorphism reduction", 328_864_989),
-        ("Survive the razor filter\nautomorphism-reduced, one side", 333_809),
+        ("Order pairs in the level-\u22641 shell\nall pairs of the 1,662,696,609 near-maximum orders", POOL * (POOL - 1) / 2),
+        ("Survive the razor filter\nand get the exact double-back check", 4_376_325_129),
         ("Have DISJOINT double-back sets\nwhat a 5-realization would need", 0),
     ]
-    fig, ax = plt.subplots(figsize=(9.8, 4.6))
-    fig.subplots_adjust(top=0.80, left=0.34)
+    fig, ax = plt.subplots(figsize=(9.8, 4.0))
+    fig.subplots_adjust(top=0.78, left=0.36)
     ys = list(range(len(stages)))[::-1]
     for y, (label, v) in zip(ys, stages):
         if v == 0:
-            ax.barh(y, 1.0, height=0.5, color=SURFACE, edgecolor=ORANGE, linewidth=2.0, hatch="///")
-            ax.text(2.2, y, "0  —  none exist", va="center", ha="left",
-                    color=ORANGE, fontweight="bold", fontsize=12.5)
+            ax.barh(y, 1.0, height=0.46, color=SURFACE, edgecolor=ORANGE, linewidth=2.0, hatch="///")
+            ax.text(3.0, y, "0  \u2014  none exist", va="center", ha="left",
+                    color=ORANGE, fontweight="bold", fontsize=13)
         else:
-            ax.barh(y, v, height=0.5, color=BLUE, linewidth=0)
-            ax.text(v * 1.7, y, human(v), va="center", ha="left", color=INK, fontsize=11)
+            ax.barh(y, v, height=0.46, color=BLUE, linewidth=0)
+            ax.text(v * 2.2, y, human(v), va="center", ha="left", color=INK, fontsize=11)
     ax.set_yticks(ys)
     ax.set_yticklabels([s[0] for s in stages], fontsize=9.5, color=INK2)
     ax.set_xscale("log")
-    ax.set_xlim(0.7, 2e16)
+    ax.set_xlim(0.7, 5e20)
     ax.set_xlabel("number of order pairs (log scale)")
     grid(ax)
-    head(ax, "Paley(43): no two maximum-acyclic orders have disjoint double-back sets",
-         "reproduced exactly — the closest pair still shares 68 cyclic triangles, "
-         "and a 5-realization needs one sharing none")
+    head(ax, "Paley(43) is not the majority of five voters",
+         "the complete proof, reproduced on a laptop \u2014 every count matching the paper exactly")
     save(fig, "fig1_level0_funnel.png")
 
 
@@ -156,26 +159,28 @@ def fig_modes():
                                    gridspec_kw={"width_ratios": [1.25, 1], "wspace": 0.45})
     fig.subplots_adjust(top=0.76, bottom=0.32, left=0.20)
 
-    modes = [("automorphism-reduced\none side, factor 903", 333_809),
-             ("pool vs pool\nreduction not used at all", 328_864_989)]
+    modes = [("level 0, aut-reduced", 333_809),
+             ("level 0, pool vs pool", 328_864_989),
+             ("level \u22641, aut-reduced\n(the full proof)", 4_376_325_129)]
     for i, (lab, pairs) in enumerate(modes):
-        ax1.barh(1 - i, pairs, height=0.44, color=BLUE, linewidth=0)
-        ax1.text(pairs * 1.6, 1 - i, human(pairs) + " pairs", va="center", color=INK, fontsize=10.5)
-    ax1.set_yticks([1, 0])
+        ax1.barh(2 - i, pairs, height=0.44, color=BLUE, linewidth=0)
+        ax1.text(pairs * 1.6, 2 - i, human(pairs) + " pairs", va="center", color=INK, fontsize=10.5)
+    ax1.set_yticks([2, 1, 0])
     ax1.set_yticklabels([m[0] for m in modes], fontsize=9.5)
     ax1.set_xscale("log")
-    ax1.set_xlim(1e5, 3e11)
+    ax1.set_xlim(1e5, 8e12)
     ax1.set_xlabel("candidate pairs given the exact double-back check (log)")
     grid(ax1)
     head(ax1, "Both modes: TRUE_DISJOINT = 0", size=11.5)
 
-    bars = [("automorphism-\nreduced", 71, ORANGE), ("pool vs pool", 68, AQUA), ("paper\nApp. A.4", 68, BLUE)]
+    bars = [("aut-reduced\nlevel 0", 71, ORANGE), ("aut-reduced\nlevel \u22641", 61, ORANGE),
+            ("pool vs pool\nlevel 0", 68, AQUA), ("paper\nApp. A.4", 68, BLUE)]
     for i, (lab, v, col) in enumerate(bars):
         ax2.bar(i, v, width=0.44, color=col, linewidth=0)
         ax2.text(i, v + 0.9, str(v), ha="center", va="bottom", color=INK, fontsize=11.5, fontweight="bold")
     ax2.set_xticks(range(len(bars)))
     ax2.set_xticklabels([b[0] for b in bars], fontsize=9.5)
-    ax2.set_ylim(0, 84)
+    ax2.set_ylim(0, 88)
     ax2.set_ylabel("minimum double-back overlap")
     grid(ax2, "y")
     head(ax2, "The one divergence, and its source", size=11.5)

@@ -3,11 +3,9 @@
 **Paper:** [arXiv 2607.26690](https://arxiv.org/abs/2607.26690), L. Chindelevitch and A. Harutyunyan (29 pp., cs.DM)
 **Compute:** the author's Mac — 14 cores, 24 GB RAM, Apple clang 16, R 4.5.3, Python 3.12, OR-Tools 9.15, CPLEX 22.1 — every run launched through `orx exp run --backend local`, capped at 8 threads.
 
-![Level-0 screen funnel](images/fig1_level0_funnel.png)
+![Paley(43) is not the majority of five voters](images/fig1_level0_funnel.png)
 
-That is the paper's central computational claim, reproduced. Read it bottom-up: a five-voter realization of the Paley tournament on 43 vertices would require two of its "orders" to disagree in completely non-overlapping places. Among all 157 trillion pairs available to it, **not one** qualifies.
-
-The figure shows the level-0 shell, which is where this reproduction started. It finished somewhere considerably larger: the **full level-≤1 shell**, 1,662,696,609 orders, with all **4,376,325,129** (rep, pool) pairs checked and `TRUE_DISJOINT = 0` — every count matching the paper exactly. That is the whole §7 result, rebuilt from scratch on a laptop.
+That is the paper's central computational claim, reproduced end to end. Read it bottom-up: a five-voter realization of the Paley tournament on 43 vertices would need two near-maximum orders that disagree in completely non-overlapping places. Across the 1.38 × 10¹⁸ pairs available to it, **not one** qualifies — and the 4,376,325,129 that survive the filter were each checked exactly. Every count in that figure matches the paper.
 
 ## The question
 
