@@ -81,7 +81,10 @@ sysinfo() {
 # it is tightened to just above the workload's own ceiling, where a genuine runaway shows up
 # immediately; the swap-growth kill is widened to a backstop for a true runaway rather than a
 # first line of defence.
-#   RSS_LIMIT_GB    20   applied to phys_footprint, not RSS. The layer build was MEASURED
+#   RSS_LIMIT_GB    25   applied to phys_footprint, not RSS. NOTE this is ABOVE the 24 GB of
+#                        physical RAM, so it is deliberately non-binding: the guard that actually
+#                        protects the machine at this setting is the swap-growth check, not the cap.
+#                        The layer build was MEASURED
 #                        at 15 GB during L19 and projects to ~17-18 GB at L21/L22 -- the
 #                        package's documented '~5 GB' is far short of the real delta<=2 build.
 #   SWAP_GROWTH_GB   6   (accommodates the documented ~5 GB build; was 3)
@@ -113,7 +116,7 @@ kill_run_tree() {                     # $1 = root pid, $2 = pid to spare (the ca
   [ "$1" = "${2:-0}" ] || kill -KILL "$1" 2>/dev/null || true
 }
 watchdog_start() {
-  local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-20}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
+  local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-25}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
   base=$(swap_used_gb); base=${base:-0}
   printf 'WATCHDOG baseline: swap already in use by the machine = %.2f GB (growth budget %s GB chargeable only above %s GB run RSS, RSS cap %s GB)\n' "$base" "$grow" "$blame" "$rmax"
   ( set +e
