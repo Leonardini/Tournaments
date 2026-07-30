@@ -43,22 +43,42 @@ echo "slices=$SLICES  parallel workers=$N_WORKERS  results=$RES"
 
 # ---------------------------------------------------------------------------
 banner "census — $SLICES gentourng res/mod slices on $N_WORKERS workers"
-# progress reporter: count .done markers every 120 s and extrapolate
-( start=$SECONDS
+# Resume: n11_worker.sh is documented idempotent per slice and drops a .done marker, so a
+# slice already banked in $RES is skipped rather than recomputed. $RES lives under $SCRATCH,
+# which survives between runs. (This run was first killed at the 71-minute mark by a watchdog
+# bug, with 46 slices already complete; recomputing them would waste an hour of laptop time.)
+todo=""
+for r in $(seq 0 $((SLICES - 1))); do
+  [ -f "$RES/w_${r}.done" ] || todo="$todo $r"
+done
+have=$(ls "$RES"/w_*.done 2>/dev/null | wc -l | tr -d ' ')
+n_todo=$(printf '%s\n' $todo | grep -c . || true)
+echo "already banked: ${have:-0}/$SLICES slices — running the remaining $n_todo"
+metric slices_resumed "${have:-0}"
+
+# progress reporter. Runs in its own shell with `set +e` because `ls` on an empty glob
+# returns non-zero, and under the inherited `pipefail` that killed the reporter outright.
+( set +e +o pipefail
+  start=$SECONDS
   while :; do
     sleep 120
     d=$(ls "$RES"/w_*.done 2>/dev/null | wc -l | tr -d ' ')
+    d=${d:-0}
     el=$((SECONDS - start))
-    awk -v d="$d" -v s="$SLICES" -v el="$el" 'BEGIN{
+    awk -v d="$d" -v s="$SLICES" -v h="${have:-0}" -v el="$el" 'BEGIN{
+      new = d - h;
       pct = s>0 ? 100*d/s : 0;
-      eta = d>0 ? el*(s-d)/d : 0;
-      printf "PROGRESS  %d/%d slices done (%.1f%%)  elapsed %dm  eta %dm\n", d, s, pct, el/60, eta/60 }'
+      eta = new>0 ? el*(s-d)/new : 0;
+      printf "PROGRESS  %d/%d slices done (%.1f%%)  %d this run  elapsed %dm  eta %dm\n",
+             d, s, pct, new, el/60, eta/60 }'
   done ) &
 PROG_PID=$!
 
 t0=$SECONDS
-seq 0 $((SLICES - 1)) | xargs -P "$N_WORKERS" -I{} \
-  bash sec6_bounds/n11_census/n11_worker.sh {} "$SLICES" "$RES" "$BIN" "$GENTOURNG"
+if [ -n "$todo" ]; then
+  printf '%s\n' $todo | xargs -P "$N_WORKERS" -I{} \
+    bash sec6_bounds/n11_census/n11_worker.sh {} "$SLICES" "$RES" "$BIN" "$GENTOURNG"
+fi
 census_s=$((SECONDS - t0))
 kill "$PROG_PID" 2>/dev/null || true
 echo "census finished in $((census_s / 60))m $((census_s % 60))s"
