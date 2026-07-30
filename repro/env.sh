@@ -53,31 +53,42 @@ sysinfo() {
 }
 
 # ---- memory / disk watchdog ---------------------------------------------------------
-# Samples swap and this run's process-tree RSS every 30 s into the log, and kills the
-# run if swap grows past SWAP_LIMIT_GB (default 3 GB). Peak RSS is reported as a METRIC
-# so the report can quote a real memory cost per node instead of an estimate.
+# Samples this run's process-tree RSS and the machine's swap every 30 s into the log, and
+# kills the run if it is the cause of memory pressure. Peak RSS is reported as a METRIC so
+# the report can quote a real memory cost per node instead of an estimate.
+#
+# The trigger is swap GROWTH above the reading taken when the run starts, not absolute
+# swap: this laptop routinely sits at 17-18 GB of swap in use from unrelated applications,
+# so an absolute threshold fires immediately on a run using 10 MB. A run is killed when it
+# has pushed swap up by more than SWAP_GROWTH_GB (default 3), or when its own resident set
+# passes RSS_LIMIT_GB (default 12, i.e. half of physical RAM).
 WD_PID=""
+swap_used_gb() { sysctl -n vm.swapusage | awk '{for(i=1;i<=NF;i++) if($i=="used"){gsub(/M/,"",$(i+2)); print $(i+2)/1024; exit}}'; }
 watchdog_start() {
-  local limit="${SWAP_LIMIT_GB:-3}" root=$$
+  local grow="${SWAP_GROWTH_GB:-3}" rmax="${RSS_LIMIT_GB:-12}" root=$$ base
+  base=$(swap_used_gb); base=${base:-0}
+  printf 'WATCHDOG baseline: swap already in use by the machine = %.2f GB (growth budget %s GB, RSS cap %s GB)\n' "$base" "$grow" "$rmax"
   ( peak=0
     while :; do
       sleep 30
       local swap rss
-      swap=$(sysctl -n vm.swapusage | sed -n 's/.*used = \([0-9.]*\)M.*/\1/p')
-      swap=${swap:-0}
+      swap=$(swap_used_gb); swap=${swap:-0}
       rss=$(ps -Ao rss=,ppid=,pid= | awk -v r="$root" '
         { rssv[$3]=$1; par[$3]=$2 }
         END { for (p in par) { q=p; d=0
                 while (q!="" && q!=1 && d<40) { if (q==r) { s+=rssv[p]; break } q=par[q]; d++ } }
               print s+0 }')
-      rss=$(echo "$rss / 1048576" | bc -l)
-      awk -v s="$swap" -v m="$rss" 'BEGIN{printf "WATCHDOG  swap=%.2fGB  rss=%.2fGB\n", s/1024, m}'
+      rss=$(awk -v k="$rss" 'BEGIN{print k/1048576}')
+      awk -v s="$swap" -v b="$base" -v m="$rss" 'BEGIN{printf "WATCHDOG  swap=%.2fGB (+%.2f vs baseline)  run_rss=%.2fGB\n", s, s-b, m}'
       peak=$(awk -v a="$peak" -v b="$rss" 'BEGIN{print (b>a)?b:a}')
       printf 'METRIC\tpeak_rss_gb\t%.2f\n' "$peak"
-      if awk -v s="$swap" -v l="$limit" 'BEGIN{exit !(s/1024 > l)}'; then
-        echo "WATCHDOG: swap exceeded ${limit}GB — killing run to protect the laptop" >&2
-        kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"
-        exit 1
+      if awk -v s="$swap" -v b="$base" -v g="$grow" 'BEGIN{exit !(s-b > g)}'; then
+        echo "WATCHDOG: this run grew swap by more than ${grow}GB — killing it to protect the laptop" >&2
+        kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"; exit 1
+      fi
+      if awk -v m="$rss" -v l="$rmax" 'BEGIN{exit !(m > l)}'; then
+        echo "WATCHDOG: run RSS passed ${rmax}GB — killing it to protect the laptop" >&2
+        kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"; exit 1
       fi
     done ) &
   WD_PID=$!

@@ -1,55 +1,121 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# BASELINE NODE — package-wide fast verification.
+# S5-E — cA3: the k = 3 threshold is necessary but not sufficient.
 #
-# Runs the repository's own quick verifier, check_all.sh: 11 self-checks spanning
-# §3-§7 plus the CPLEX set-cover demo. Establishes that this machine's toolchain
-# reproduces the package's shipped claims before any heavy node is launched.
+# Conjecture A(k) predicted that a tournament is k-inducible exactly when its
+# predictability alpha* reaches (k+1)/(2k). At k = 3 that threshold is 2/3. cA3 (the
+# code's ce1068) is the Z_11 circulant with connection set {1,2,3,4,6}: it sits EXACTLY
+# on the threshold, alpha* = 2/3, and yet is not 3-inducible — it needs five voters.
 #
-# Metric: PASS / SKIP / FAIL counts (target PASS=11, FAIL=0 — CPLEX is installed
-# here, so the normally-skipped Rcplex check should also run).
+# This is the same shape of result as the paper's headline at k = 5, where Paley(43) has
+# alpha* = 181/301 > 3/5 and still is not 5-inducible. cA3 is the small, fully certifiable
+# instance of the phenomenon, so it is reproduced here by every independent engine the
+# package ships:
+#
+#   alpha*             exact rational LP (rcdd + GMP), plus the structure analysis
+#   not 3-inducible    (a) OR-Tools CP-SAT position-variable encoding
+#                      (b) IBM CPLEX majority ILP
+#                      (c) solver-free: enumerate all 11! = 39,916,800 backward masks and
+#                          search for a 3-order partition of the 55 arcs
+#   5-inducible        explicit 5-voter realization, verified arc by arc
+#   vertex-critical    the n = 10 vertex deletion IS 3-inducible
+#   minimal certificate  CPLEX min-cardinality (6 orders) + free orbit-minimality argument
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
-cd "$REPRO_ROOT"
+cd "$REPRO_ROOT/sec5_a3_boundary"
 
 sysinfo
+watchdog_start
+trap watchdog_stop EXIT
 
-banner "check_all.sh — quick verification of every section"
+hit() { grep -qF -- "$2" "$1" && echo 1 || echo 0; }
+vd() { [ "$1" = 1 ] && echo aligned || echo divergent; }
+
+# ---------------------------------------------------------------------------
+banner "1. exact rational alpha* = 2/3 and the structure of cA3"
+Rscript verify_ce1068.R  2>&1 | tee "$SCRATCH/verify.out"
+Rscript analyze_ce1068.R 2>&1 | tee "$SCRATCH/analyze.out"
+
+a_exact=$(hit "$SCRATCH/verify.out" 'alpha* == 2/3 exactly ? TRUE')
+a_recheck=$(hit "$SCRATCH/verify.out" 'certificate re-check')
+circ=$(hit "$SCRATCH/analyze.out" 'has an 11-cycle automorphism (=> circulant): TRUE')
+dreg=$(hit "$SCRATCH/analyze.out" 'doubly-regular (all==3): TRUE')
+cset=$(grep -o '{ *1, *2, *3, *4, *6 *}' "$SCRATCH/analyze.out" | head -1)
+metric alpha_star_exact_2_3 "$a_exact"
+claim "sec5.cA3-alpha-star-exact" "alpha* = 2/3 exactly (exact rational LP)" \
+      "$([ "$a_exact" = 1 ] && echo 'alpha* == 2/3 exactly ? TRUE' || echo 'not confirmed')" "$(vd "$a_exact")"
+claim "sec5.cA3-circulant" "Z_11 circulant, connection set {1,2,3,4,6}, doubly regular" \
+      "circulant=$([ "$circ" = 1 ] && echo TRUE || echo no), S=${cset:-not found}, doubly-regular=$([ "$dreg" = 1 ] && echo TRUE || echo no)" \
+      "$(vd "$([ "$circ" = 1 ] && [ "$dreg" = 1 ] && [ -n "$cset" ] && echo 1 || echo 0)")"
+
+# ---------------------------------------------------------------------------
+banner "2. not 3-inducible — engine (a): OR-Tools CP-SAT"
+python3 independent_realize3_cpsat.py 2>&1 | tee "$SCRATCH/cpsat.out"
+e_k3=$(hit "$SCRATCH/cpsat.out" 'k=3 (maj>=2): INFEASIBLE (proven)')
+e_k5=$(hit "$SCRATCH/cpsat.out" 'k=5 (maj>=3): FEASIBLE')
+
+banner "3. not 3-inducible — engine (b): solver-free 11! partition search"
+cc -O3 -o "$SCRATCH/realize3_partition" realize3_partition.c
 t0=$SECONDS
+"$SCRATCH/realize3_partition" 2>&1 | tee "$SCRATCH/partition.out"
+part_s=$((SECONDS - t0))
+e_part=$(hit "$SCRATCH/partition.out" 'NO PARTITION EXISTS')
+metric partition_seconds "$part_s"
+
+banner "4. not 3-inducible — engine (c): IBM CPLEX majority ILP"
 set +e
-./check_all.sh 2>&1 | tee "$SCRATCH/check_all.out"
+python3 reg11_realize3.py ce1068_inmask.txt "$SCRATCH/ce1068_realize3.csv" 2>&1 | tee "$SCRATCH/cplex.out"
+cplex_rc=$?
 set -e
-elapsed=$((SECONDS - t0))
+e_cplex=$(hit "$SCRATCH/cplex.out" 'NOTREAL=1')
+[ "$cplex_rc" = 0 ] || echo "  (CPLEX engine exited $cplex_rc — recorded as unavailable, the two free engines stand alone)"
 
-# strip the ANSI colouring check_all.sh emits before parsing
-out=$(sed $'s/\033\\[[0-9;]*m//g' "$SCRATCH/check_all.out")
-summary=$(printf '%s' "$out" | grep -E 'ALL CHECKS OK|SOME CHECKS FAILED' || true)
-np=$(printf '%s' "$out" | grep -c '^  PASS ' || true)
-ns=$(printf '%s' "$out" | grep -c '^  SKIP ' || true)
-nf=$(printf '%s' "$out" | grep -c '^  FAIL ' || true)
+engines=$((e_k3 + e_part + e_cplex))
+metric engines_agreeing_not_3_inducible "$engines/3"
+claim "sec5.cA3-not-3-inducible-3-engines" "not 3-inducible, unanimous across CP-SAT / CPLEX ILP / solver-free" \
+      "CP-SAT=$([ "$e_k3" = 1 ] && echo INFEASIBLE || echo n/a), solver-free=$([ "$e_part" = 1 ] && echo 'NO PARTITION' || echo n/a), CPLEX=$([ "$e_cplex" = 1 ] && echo NOTREAL || echo unavailable) => $engines/3" \
+      "$(vd "$([ "$engines" = 3 ] && echo 1 || echo 0)")"
 
-banner "results"
-metric wall_seconds "$elapsed"
-metric checks_pass "$np"
-metric checks_skip "$ns"
-metric checks_fail "$nf"
+# ---------------------------------------------------------------------------
+banner "5. cA3 IS 5-inducible, and is vertex-critical"
+python3 realize_and_delete_ce1068.py 2>&1 | tee "$SCRATCH/rd.out"
+r5=$(hit "$SCRATCH/rd.out" '5-realizable = True')
+rver=$(hit "$SCRATCH/rd.out" 'arcs with < 3 voters agreeing = 0')
+rdel=$(hit "$SCRATCH/rd.out" '3-realizable = True')
+rcrit=$(hit "$SCRATCH/rd.out" 'VERTEX-CRITICAL')
+claim "sec5.cA3-5-inducible" "5-inducible: explicit 5-voter realization, McG(cA3) = 5" \
+      "5-realizable=$([ "$r5" = 1 ] && echo True || echo no), arcs with <3 agreeing = $([ "$rver" = 1 ] && echo 0 || echo '>0')" \
+      "$(vd "$([ "$r5" = 1 ] && [ "$rver" = 1 ] && echo 1 || echo 0)")"
+claim "sec5.cA3-vertex-critical" "every 1-vertex deletion is 3-inducible => vertex-critical" \
+      "$([ "$rdel" = 1 ] && [ "$rcrit" = 1 ] && echo 'deletion 3-realizable = True, VERTEX-CRITICAL' || echo 'not confirmed')" \
+      "$(vd "$([ "$rdel" = 1 ] && [ "$rcrit" = 1 ] && echo 1 || echo 0)")"
 
-# The individual claims each quick check settles, as paper-value vs observed-value.
-verdict() { [ "$1" = 1 ] && echo aligned || echo divergent; }
-g() { printf '%s' "$out" | grep -qF -- "$1" && echo 1 || echo 0; }
+# ---------------------------------------------------------------------------
+banner "6. the minimum 2/3-certificate"
+set +e
+python3 cert_primal_1068.py 2>&1 | tee "$SCRATCH/certp.out"; cp_rc=$?
+set -e
+c6=$(grep -o 'min-cardinality = [0-9]* orders' "$SCRATCH/certp.out" | tail -1 | awk '{print $3}')
+ctight=$(hit "$SCRATCH/certp.out" 'tight edges: 55/55')
+metric min_certificate_orders "${c6:-none}"
+claim "sec5.cA3-min-certificate" "minimum primal 2/3-certificate = 6 orders; 55/55 arcs tight at 2/3" \
+      "min-cardinality = ${c6:-unavailable} orders, tight edges $([ "$ctight" = 1 ] && echo 55/55 || echo 'not confirmed')" \
+      "$(vd "$([ "${c6:-0}" = 6 ] && [ "$ctight" = 1 ] && echo 1 || echo 0)")"
 
-claim "sec3.mhp-min-weight-FAS"      "min-weight FAS = 5, unique"        "$(printf '%s' "$out" | grep -q '^  PASS sec3' && echo 'min-weight FAS = 5, unique' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec3')")"
-claim "sec4.Tstar-FAS-gt-HS3"        "FAS = 17 > 16 = HS3"              "$(printf '%s' "$out" | grep -q '^  PASS sec4' && echo 'FAS = 17 > 16 = HS3' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec4')")"
-claim "sec5.cA3-alpha-star"          "alpha* = 2/3 exactly (rational)"  "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 exact' && echo 'alpha* = 2/3 exactly' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 exact')")"
-claim "sec5.cA3-not-3-inducible"     "k=3 INFEASIBLE, k=5 FEASIBLE"     "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 not-3-real' && echo 'k=3 INFEASIBLE, k=5 FEASIBLE' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 not-3-real')")"
-claim "sec5.obstacle-certs-47"       "47/47 obstacles certified"        "$(printf '%s' "$out" | grep -q 'PASS sec5: 47/47' && echo '47/47 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 47/47')")"
-claim "sec5.nm1-certs-72"            "72/72 non-margin-1 certified"     "$(printf '%s' "$out" | grep -q 'PASS sec5: 72/72' && echo '72/72 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 72/72')")"
-claim "sec6.counting-bounds"         "N(5) <= 39 regular, <= 38 near-reg" "$(printf '%s' "$out" | grep -q 'PASS sec6: counting' && printf '%s' "$out" | grep -q 'PASS sec6: near-regular' && echo 'both tables assert clean' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec6: counting')" = 1 ] && [ "$(g 'PASS sec6: near-regular')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.dp43-selftest-q7-q11"    "MAS(7)=14, MAS(11)=35 == brute force" "$(printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(7)' && printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(11)' && echo 'both self-tests PASSED' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec7: certified MAS(7)')" = 1 ] && [ "$(g 'PASS sec7: certified MAS(11)')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.cpsat-gauntlet"          "GAUNTLET: PASS"                   "$(printf '%s' "$out" | grep -q 'PASS sec7: CP-SAT' && echo 'GAUNTLET: PASS' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec7: CP-SAT')")"
+python3 cert_orbits_1068.py 2>&1 | tee "$SCRATCH/certo.out"
+orb=$(hit "$SCRATCH/certo.out" 'arc-orbits under C_11: 5 classes, sizes [11, 11, 11, 11, 11]')
+k1=$(hit "$SCRATCH/certo.out" 'k=1 feasible in pool? False')
+claim "sec5.cA3-orbit-structure" "5 arc-orbits under C_11 of sizes [11,11,11,11,11]; no 1-orbit certificate" \
+      "$([ "$orb" = 1 ] && [ "$k1" = 1 ] && echo 'both confirmed' || echo 'not confirmed')" \
+      "$(vd "$([ "$orb" = 1 ] && [ "$k1" = 1 ] && echo 1 || echo 0)")"
+
+rm -f ce1068_inmask.txt ce1068_analysis.rds
 
 banner "verdict"
-echo "$summary"
-echo "PASS=$np SKIP=$ns FAIL=$nf  in ${elapsed}s"
-[ "$nf" -eq 0 ] || { echo "BASELINE FAILED: $nf quick check(s) did not reproduce" >&2; exit 1; }
-echo "BASELINE OK: all $np quick checks reproduce on this machine ($ns skipped)"
+ok=1
+for v in "$a_exact" "$circ" "$dreg" "$e_k3" "$e_k5" "$e_part" "$r5" "$rver" "$rdel" "$rcrit" "$orb" "$k1"; do
+  [ "$v" = 1 ] || ok=0
+done
+echo "engines agreeing not-3-inducible: $engines/3 | solver-free 11! search: ${part_s}s"
+[ "$ok" = 1 ] || { echo "S5-E: part of the cA3 battery did not reproduce" >&2; exit 1; }
+echo "S5-E OK: cA3 sits on alpha* = 2/3 exactly and is not 3-inducible ($engines/3 independent engines), but is 5-inducible and vertex-critical"
