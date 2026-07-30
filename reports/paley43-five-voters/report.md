@@ -140,6 +140,16 @@ It is worth being precise about *which* error, because a nearby statement in the
 
 Separately — and genuinely true — `cert_orbits_1068.py`'s header records that "the §2 minimal certificate uses 6 orders = 2 from each of 3 C₁₁-orbits". Decomposing the 6-order certificate that this reproduction's S5-E run printed confirms it exactly: three C₁₁-orbits contributing two orders each, with back-counts pairing {16, 16}, {20, 20}, {19, 19} — necessarily paired, since σ preserves an order's back-count within its orbit. (Derived from the S5-E run's certificate output rather than a separate run.) That is a fact about the certificate's orbit structure, not about the tournament's regularity; the two claims are unrelated.
 
+### Documentation issues found while running the package
+
+Three, none of which touches a result. Listed because two cost a reader time and the third is a one-line fix:
+
+| where | issue | effect |
+|---|---|---|
+| `sec5_a3_boundary/README.md`, *How to run* | the paths `Paley23Decide/ce1068_inmask.txt` for `inmask_alpha.R` and `reg11_realize3.py` are stale — `verify_ce1068.R:34` writes `ce1068_inmask.txt` into the current directory, with no prefix | following the README literally fails on a missing file; pass the bare filename |
+| `sec5_a3_boundary/README.md`, *What to expect* | states `analyze_ce1068.R` prints `doubly-regular (all==3): TRUE`; it prints `FALSE`, correctly | misleading, but the verifier is right — the fix belongs in the README, not the script |
+| paper, Appendix A.4 | `min_overlap = 68` does not say which run mode produced it; the shipped default (automorphism-reduced) gives 71, and only `POOLVSPOOL=1` gives 68 | a reader running the tool as shipped cannot reconcile the number |
+
 **Partial — MAS(Paley43) ≤ 543, and the level-1 layer.** Both need the q = 43 δ ≤ 2 layer tables, documented at ~48 GB of scratch and confirmed by the engine's own Burnside ceiling (48.28 GB). This machine has had **40–43 GB free on a 96 %-full boot volume**, so the build was not attempted — filling that volume is a real hazard, not a budget question. Consequently:
 
 - MAS ≥ 543 is established here independently; MAS ≤ 543 rests on the paper's certification.
