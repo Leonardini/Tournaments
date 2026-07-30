@@ -43,8 +43,8 @@ n = 9 and n = 10 catalogues and nauty `gentourng` were used as the package speci
 
 **Compute.** The author's Mac (14 cores, 24 GB RAM; Apple clang 16, R 4.5.3, Python 3.12.13,
 OR-Tools 9.15.6755, CPLEX 22.1.2.0, GLPK), every run launched through `orx exp run --backend
-local` and capped at 8 threads. Everything except the n = 11 census cost **under 4 minutes of
-wall clock total**, at 0.23 GB peak resident memory.
+local` and capped at 8 threads. Everything except the n = 11 census cost **about five minutes of
+wall clock total** (307 s across seven runs), at 0.23 GB peak resident memory.
 
 **Read the details:** [`reports/paley43-five-voters/report.md`](reports/paley43-five-voters/report.md)
 — the full write-up: the mechanism, the code path, five figures, and the per-claim assessment
