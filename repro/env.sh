@@ -81,7 +81,7 @@ sysinfo() {
 # it is tightened to just above the workload's own ceiling, where a genuine runaway shows up
 # immediately; the swap-growth kill is widened to a backstop for a true runaway rather than a
 # first line of defence.
-#   RSS_LIMIT_GB    11   (just above the 9.32 GB ceiling; was 12)
+#   RSS_LIMIT_GB    11   applied to phys_footprint (anonymous), not RSS
 #   SWAP_GROWTH_GB   6   (accommodates the documented ~5 GB build; was 3)
 WD_PID=""
 swap_used_gb() { sysctl -n vm.swapusage | awk '{for(i=1;i<=NF;i++) if($i=="used"){gsub(/M/,"",$(i+2)); print $(i+2)/1024; exit}}'; }
@@ -119,22 +119,33 @@ watchdog_start() {
       sleep 30
       local swap rss
       swap=$(swap_used_gb); swap=${swap:-0}
-      rss=$(ps -Ao rss=,ppid=,pid= | awk -v r="$root" '
-        { rssv[$3]=$1; par[$3]=$2 }
-        END { for (p in par) { q=p; d=0
-                while (q!="" && q!=1 && d<40) { if (q==r) { s+=rssv[p]; break } q=par[q]; d++ } }
-              print s+0 }')
-      rss=$(awk -v k="$rss" 'BEGIN{print k/1048576}')
-      awk -v s="$swap" -v b="$base" -v m="$rss" 'BEGIN{printf "WATCHDOG  swap=%.2fGB (+%.2f vs baseline)  run_rss=%.2fGB\n", s, s-b, m}'
-      peak=$(awk -v a="$peak" -v b="$rss" 'BEGIN{print (b>a)?b:a}')
+      # RSS is the WRONG metric here. dp43 mmaps each parent layer file read-only
+      # (MAP_SHARED/PROT_READ), so up to 9.3 GB of clean, instantly reclaimable page cache
+      # counts toward RSS while creating no memory pressure whatever. Judging on RSS killed a
+      # healthy build at "11.03 GB" while swap sat BELOW its baseline. Measured directly: a
+      # 2 GB read-only mmap fully touched reads 2.01 GB of RSS but 8.7 MB of phys_footprint.
+      # So decide on phys_footprint (macOS's anonymous+compressed measure, what Activity
+      # Monitor calls Memory) summed over the tree, and log RSS alongside for context.
+      pids=$(ps -Ao ppid=,pid= | awk -v r="$root" '
+        { par[$2]=$1 } END { for (p in par) { q=p; d=0
+            while (q!="" && q!=1 && d<40) { if (q==r) { print p; break } q=par[q]; d++ } } }')
+      rss=$(ps -Ao rss=,pid= | awk -v L="$pids" 'BEGIN{split(L,a," "); for(i in a) want[a[i]]=1}
+              want[$2]{s+=$1} END{printf "%.2f", s/1048576}')
+      mem=$(for pp in $pids; do footprint -p "$pp" 2>/dev/null | awk '/phys_footprint:/{
+                v=$2; u=$3;
+                if (u=="GB") v*=1048576; else if (u=="MB") v*=1024;
+                print v; exit}'; done | awk '{s+=$1} END{printf "%.2f", s/1048576}')
+      rss=${rss:-0}; mem=${mem:-0}
+      awk -v s="$swap" -v b="$base" -v m="$mem" -v r="$rss" 'BEGIN{printf "WATCHDOG  swap=%.2fGB (+%.2f vs baseline)  run_mem=%.2fGB (rss %.2fGB, incl. mmapped layer files)\n", s, s-b, m, r}'
+      peak=$(awk -v a="$peak" -v b="$mem" 'BEGIN{print (b>a)?b:a}')
       printf 'METRIC\tpeak_rss_gb\t%.2f\n' "$peak"
-      if awk -v m="$rss" -v l="$rmax" 'BEGIN{exit !(m > l)}'; then
-        echo "WATCHDOG: run RSS passed ${rmax}GB — killing it to protect the laptop" >&2
+      if awk -v m="$mem" -v l="$rmax" 'BEGIN{exit !(m > l)}'; then
+        echo "WATCHDOG: run anonymous memory passed ${rmax}GB — killing it to protect the laptop" >&2
         kill_run_tree "$root" "$BASHPID"; exit 1
       fi
       if awk -v s="$swap" -v b="$base" -v g="$grow" 'BEGIN{exit !(s-b > g)}'; then
-        if awk -v m="$rss" -v c="$blame" 'BEGIN{exit !(m >= c)}'; then
-          echo "WATCHDOG: swap grew past ${grow}GB while this run holds ${rss}GB — this run is the likely cause, killing it" >&2
+        if awk -v m="$mem" -v c="$blame" 'BEGIN{exit !(m >= c)}'; then
+          echo "WATCHDOG: swap grew past ${grow}GB while this run holds ${mem}GB anonymous — this run is the likely cause, killing it" >&2
           kill_run_tree "$root" "$BASHPID"; exit 1
         fi
         awk -v s="$swap" -v b="$base" -v m="$rss" 'BEGIN{
