@@ -85,6 +85,31 @@ sysinfo() {
 #   SWAP_GROWTH_GB   6   (accommodates the documented ~5 GB build; was 3)
 WD_PID=""
 swap_used_gb() { sysctl -n vm.swapusage | awk '{for(i=1;i<=NF;i++) if($i=="used"){gsub(/M/,"",$(i+2)); print $(i+2)/1024; exit}}'; }
+
+# Kill a run and everything it spawned, deepest first, skipping the caller.
+#
+# `kill -TERM -$pid` needs $pid to be a process-GROUP leader, which run.sh is not under the orx
+# local runner: the negative-pid form fails and the usual fallback `kill -TERM $pid` reaps only
+# the shell. Its children keep running, unsupervised and invisible to orx. That actually happened
+# — two orphaned `dp43` processes survived two killed runs, kept allocating (one reached 4.74 GB
+# over 11 minutes), and the memory they held is what starved the next attempt into being killed
+# too. So walk the tree explicitly, then SIGKILL whatever ignores SIGTERM.
+kill_tree() {
+  local p="$1" self="${2:-0}" c
+  for c in $(pgrep -P "$p" 2>/dev/null); do
+    [ "$c" = "$self" ] || kill_tree "$c" "$self"
+  done
+  [ "$p" = "$self" ] || kill -TERM "$p" 2>/dev/null || true
+}
+kill_run_tree() {                     # $1 = root pid, $2 = pid to spare (the caller)
+  kill_tree "$1" "${2:-0}"
+  sleep 5
+  local c
+  for c in $(pgrep -P "$1" 2>/dev/null); do
+    [ "$c" = "${2:-0}" ] || kill -KILL "$c" 2>/dev/null || true
+  done
+  [ "$1" = "${2:-0}" ] || kill -KILL "$1" 2>/dev/null || true
+}
 watchdog_start() {
   local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-11}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
   base=$(swap_used_gb); base=${base:-0}
@@ -105,12 +130,12 @@ watchdog_start() {
       printf 'METRIC\tpeak_rss_gb\t%.2f\n' "$peak"
       if awk -v m="$rss" -v l="$rmax" 'BEGIN{exit !(m > l)}'; then
         echo "WATCHDOG: run RSS passed ${rmax}GB — killing it to protect the laptop" >&2
-        kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"; exit 1
+        kill_run_tree "$root" "$BASHPID"; exit 1
       fi
       if awk -v s="$swap" -v b="$base" -v g="$grow" 'BEGIN{exit !(s-b > g)}'; then
         if awk -v m="$rss" -v c="$blame" 'BEGIN{exit !(m >= c)}'; then
           echo "WATCHDOG: swap grew past ${grow}GB while this run holds ${rss}GB — this run is the likely cause, killing it" >&2
-          kill -TERM -"$root" 2>/dev/null || kill -TERM "$root"; exit 1
+          kill_run_tree "$root" "$BASHPID"; exit 1
         fi
         awk -v s="$swap" -v b="$base" -v m="$rss" 'BEGIN{
           printf "WATCHDOG WARNING: machine swap is up %.2fGB since this run started, but the run holds only %.2fGB — other processes are the cause, not this run. Continuing.\n", s-b, m }' >&2
