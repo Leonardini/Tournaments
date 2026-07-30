@@ -27,7 +27,7 @@
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
 
-MIN_FREE_GB="${MIN_FREE_GB:-60}"      # refuse to start below this
+MIN_FREE_GB=0                          # computed below from what is still to be written
 ABORT_FREE_GB="${ABORT_FREE_GB:-8}"   # abort mid-build below this
 
 free_gb() { df -g "$1" | tail -1 | awk '{print $4}'; }
@@ -35,11 +35,18 @@ free_gb() { df -g "$1" | tail -1 | awk '{print $4}'; }
 sysinfo
 
 banner "pre-flight: disk"
+# The requirement is what is still to be WRITTEN, not the full 48 GB: tables already banked
+# are occupying the space they need. A resume with 36 GB banked needs ~12 GB more, not 60.
+BANKED=$(du -sg "$SCRATCH/dp43run43" 2>/dev/null | awk '{print $1}'); BANKED=${BANKED:-0}
+NEED=$(( 50 - BANKED )); [ "$NEED" -lt 3 ] && NEED=3
+MIN_FREE_GB=$(( NEED + 12 ))              # + join/enum intermediates and swap headroom
 FREE=$(free_gb "$SCRATCH")
 echo "  scratch            $SCRATCH"
 echo "  free on its volume ${FREE} GB"
-echo "  required to start  ${MIN_FREE_GB} GB   (48 GB of layer tables + join/enum + margin)"
+echo "  layer tables banked ${BANKED} GB  =>  ~${NEED} GB still to write"
+echo "  required to start  ${MIN_FREE_GB} GB   (remaining tables + join/enum + margin)"
 metric free_gb_at_start "$FREE"
+metric banked_tables_gb "$BANKED"
 if [ "${FREE:-0}" -lt "$MIN_FREE_GB" ]; then
   cat >&2 <<EOF
 
