@@ -1,55 +1,108 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# BASELINE NODE — package-wide fast verification.
+# S6-D — triple-local CSP engine at n = 9 (full census).
 #
-# Runs the repository's own quick verifier, check_all.sh: 11 self-checks spanning
-# §3-§7 plus the CPLEX set-cover demo. Establishes that this machine's toolchain
-# reproduces the package's shipped claims before any heavy node is launched.
+# The N(5) >= 12 result is a solver-free C pipeline, not an ILP sweep. Its three stages
+# are validated here over a COMPLETE catalogue (all 191,536 tournaments on n = 9) before
+# the n = 11 census is attempted:
 #
-# Metric: PASS / SKIP / FAIL counts (target PASS=11, FAIL=0 — CPLEX is installed
-# here, so the normally-skipped Rcplex check should also run).
+#   margin1_scan  decides margin-1 3-inducibility (3 labels) and full 3-inducibility
+#                 (4 labels) as a per-vertex-triple arc labelling
+#   cert_m1k5     margin-1 five-voter CSP over the 10 dissent pairs; SAT => 5-inducible
+#                 with every arc backed exactly 3:2, emitting the arc labelling
+#   verify_m1k5   independent verifier: rebuilds the five voters from each witness,
+#                 checks every backward set is acyclic and re-counts every arc at 3:2
+#
+# Paper's n = 9 reference tally (sec6_bounds/README.md "What to expect"):
+#   total 191,536 / margin-1 SAT 173,608 / realizable-not-margin-1 254 / non-3-real 17,674
+#   and every non-3-inducible tournament margin-1 5-inducible, all witnesses verified.
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
 
 sysinfo
+[ -x "$GENTOURNG" ] || { echo "gentourng not found at $GENTOURNG" >&2; exit 1; }
+watchdog_start
+trap watchdog_stop EXIT
 
-banner "check_all.sh — quick verification of every section"
+banner "build"
+cc -O3 -o "$SCRATCH/margin1_scan" sec6_bounds/triple_local_csp/margin1_scan.c
+cc -O3 -o "$SCRATCH/cert_m1k5"    sec6_bounds/triple_local_csp/cert_m1k5.c
+cc -O3 -o "$SCRATCH/verify_m1k5"  sec6_bounds/triple_local_csp/verify_m1k5.c
+echo "built margin1_scan, cert_m1k5, verify_m1k5"
+
+# ---------------------------------------------------------------------------
+banner "1. 3-inducibility scan over the complete n = 9 catalogue"
 t0=$SECONDS
-set +e
-./check_all.sh 2>&1 | tee "$SCRATCH/check_all.out"
-set -e
-elapsed=$((SECONDS - t0))
+"$GENTOURNG" -q 9 | "$SCRATCH/margin1_scan" 9 > /dev/null 2> "$SCRATCH/scan.err"
+scan_s=$((SECONDS - t0))
+tail -1 "$SCRATCH/scan.err"
+line=$(grep '^n=9:' "$SCRATCH/scan.err" | tail -1)
+tot=$(sed -n 's/.*total \([0-9]*\).*/\1/p'                       <<<"$line")
+msat=$(sed -n 's/.*margin1-SAT \([0-9]*\).*/\1/p'                <<<"$line")
+rnm=$(sed -n 's/.*REALIZABLE-NOT-MARGIN1 \([0-9]*\).*/\1/p'      <<<"$line")
+nre=$(sed -n 's/.*non-realizable \([0-9]*\).*/\1/p'              <<<"$line")
 
-# strip the ANSI colouring check_all.sh emits before parsing
-out=$(sed $'s/\033\\[[0-9;]*m//g' "$SCRATCH/check_all.out")
-summary=$(printf '%s' "$out" | grep -E 'ALL CHECKS OK|SOME CHECKS FAILED' || true)
-np=$(printf '%s' "$out" | grep -c '^  PASS ' || true)
-ns=$(printf '%s' "$out" | grep -c '^  SKIP ' || true)
-nf=$(printf '%s' "$out" | grep -c '^  FAIL ' || true)
+metric scan_wall_seconds "$scan_s"
+metric scan_us_per_tournament "$(awk -v s="$scan_s" -v n="${tot:-1}" 'BEGIN{printf "%.1f", s*1e6/n}')"
+metric n9_total "$tot"; metric n9_margin1_sat "$msat"
+metric n9_real_not_margin1 "$rnm"; metric n9_non_3_real "$nre"
 
-banner "results"
-metric wall_seconds "$elapsed"
-metric checks_pass "$np"
-metric checks_skip "$ns"
-metric checks_fail "$nf"
+eq() { [ "$1" = "$2" ] && echo aligned || echo divergent; }
+claim "sec6.n9-catalogue-size"      "191536" "$tot"  "$(eq "$tot"  191536)"
+claim "sec6.n9-margin1-3-inducible" "173608" "$msat" "$(eq "$msat" 173608)"
+claim "sec6.n9-3-inducible-not-m1"  "254"    "$rnm"  "$(eq "$rnm"  254)"
+claim "sec6.n9-not-3-inducible"     "17674"  "$nre"  "$(eq "$nre"  17674)"
 
-# The individual claims each quick check settles, as paper-value vs observed-value.
-verdict() { [ "$1" = 1 ] && echo aligned || echo divergent; }
-g() { printf '%s' "$out" | grep -qF -- "$1" && echo 1 || echo 0; }
+# ---------------------------------------------------------------------------
+banner "2. full margin-1 five-voter pipeline (the census wiring, one process)"
+# Every non-3-inducible n = 9 tournament must admit a margin-1 five-voter profile,
+# and every witness must survive the independent verifier.
+t0=$SECONDS
+"$GENTOURNG" -q 9 \
+  | "$SCRATCH/margin1_scan" 9 emitn 2> "$SCRATCH/scan2.err" \
+  | grep '^N ' | cut -d' ' -f2 \
+  | "$SCRATCH/cert_m1k5" 9 2> "$SCRATCH/cert.err" \
+  | "$SCRATCH/verify_m1k5" 9 2> "$SCRATCH/verify.err" > /dev/null
+pipe_s=$((SECONDS - t0))
+tail -1 "$SCRATCH/cert.err"; tail -1 "$SCRATCH/verify.err"
 
-claim "sec3.mhp-min-weight-FAS"      "min-weight FAS = 5, unique"        "$(printf '%s' "$out" | grep -q '^  PASS sec3' && echo 'min-weight FAS = 5, unique' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec3')")"
-claim "sec4.Tstar-FAS-gt-HS3"        "FAS = 17 > 16 = HS3"              "$(printf '%s' "$out" | grep -q '^  PASS sec4' && echo 'FAS = 17 > 16 = HS3' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec4')")"
-claim "sec5.cA3-alpha-star"          "alpha* = 2/3 exactly (rational)"  "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 exact' && echo 'alpha* = 2/3 exactly' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 exact')")"
-claim "sec5.cA3-not-3-inducible"     "k=3 INFEASIBLE, k=5 FEASIBLE"     "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 not-3-real' && echo 'k=3 INFEASIBLE, k=5 FEASIBLE' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 not-3-real')")"
-claim "sec5.obstacle-certs-47"       "47/47 obstacles certified"        "$(printf '%s' "$out" | grep -q 'PASS sec5: 47/47' && echo '47/47 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 47/47')")"
-claim "sec5.nm1-certs-72"            "72/72 non-margin-1 certified"     "$(printf '%s' "$out" | grep -q 'PASS sec5: 72/72' && echo '72/72 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 72/72')")"
-claim "sec6.counting-bounds"         "N(5) <= 39 regular, <= 38 near-reg" "$(printf '%s' "$out" | grep -q 'PASS sec6: counting' && printf '%s' "$out" | grep -q 'PASS sec6: near-regular' && echo 'both tables assert clean' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec6: counting')" = 1 ] && [ "$(g 'PASS sec6: near-regular')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.dp43-selftest-q7-q11"    "MAS(7)=14, MAS(11)=35 == brute force" "$(printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(7)' && printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(11)' && echo 'both self-tests PASSED' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec7: certified MAS(7)')" = 1 ] && [ "$(g 'PASS sec7: certified MAS(11)')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.cpsat-gauntlet"          "GAUNTLET: PASS"                   "$(printf '%s' "$out" | grep -q 'PASS sec7: CP-SAT' && echo 'GAUNTLET: PASS' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec7: CP-SAT')")"
+cl=$(grep '^total ' "$SCRATCH/cert.err" | tail -1)
+c_tot=$(sed -n 's/^total \([0-9]*\):.*/\1/p'                  <<<"$cl")
+c_sat=$(sed -n 's/.*margin1-k5-SAT \([0-9]*\).*/\1/p'         <<<"$cl")
+c_uns=$(sed -n 's/.*UNSAT \([0-9]*\).*/\1/p'                  <<<"$cl")
+vl=$(grep '^verified ' "$SCRATCH/verify.err" | tail -1)
+v_ok=$(sed -n 's/^verified \([0-9]*\).*/\1/p'                 <<<"$vl")
+v_fail=$(grep -c 'VERIFY FAIL' "$SCRATCH/verify.err" || true)
+
+metric pipeline_wall_seconds "$pipe_s"
+metric cert_instances "$c_tot"; metric cert_m1k5_sat "$c_sat"; metric cert_unsat "$c_uns"
+metric witnesses_verified "$v_ok"; metric verify_failures "$v_fail"
+
+claim "sec6.n9-all-non3real-are-m1-5-inducible" "17674 of 17674 margin-1 5-inducible, 0 UNSAT" \
+      "$c_sat of $c_tot SAT, $c_uns UNSAT" \
+      "$([ "$c_sat" = 17674 ] && [ "$c_uns" = 0 ] && echo aligned || echo divergent)"
+claim "sec6.n9-witnesses-independently-verified" "all witnesses: 5 acyclic voters, every arc exactly 3:2" \
+      "$v_ok verified, $v_fail failures" \
+      "$([ "$v_ok" = 17674 ] && [ "$v_fail" = 0 ] && echo aligned || echo divergent)"
+
+# ---------------------------------------------------------------------------
+banner "3. projection to n = 11"
+# D_11 = 903,753,248 tournaments. Project the census cost from the measured rate.
+us=$(awk -v s="$scan_s" -v n="${tot:-1}" 'BEGIN{printf "%.2f", s*1e6/n}')
+awk -v us="$us" 'BEGIN{
+  d11=903753248; core_h=d11*us/1e6/3600;
+  printf "  measured scan rate      %.2f us/tournament (paper: ~20-34 us)\n", us;
+  printf "  D_11                    903,753,248\n";
+  printf "  projected scan cost     %.1f core-hours  => %.1f h wall on 8 cores\n", core_h, core_h/8;
+  printf "METRIC\tn11_projected_core_hours\t%.1f\n", core_h;
+  printf "METRIC\tn11_projected_wall_hours_8core\t%.1f\n", core_h/8; }'
 
 banner "verdict"
-echo "$summary"
-echo "PASS=$np SKIP=$ns FAIL=$nf  in ${elapsed}s"
-[ "$nf" -eq 0 ] || { echo "BASELINE FAILED: $nf quick check(s) did not reproduce" >&2; exit 1; }
-echo "BASELINE OK: all $np quick checks reproduce on this machine ($ns skipped)"
+allok=1
+for pair in "$tot 191536" "$msat 173608" "$rnm 254" "$nre 17674" "$c_sat 17674" "$c_uns 0" "$v_ok 17674" "$v_fail 0"; do
+  set -- $pair; [ "$1" = "$2" ] || allok=0
+done
+echo "scan ${scan_s}s | pipeline ${pipe_s}s"
+[ "$allok" = 1 ] || { echo "S6-D: the n=9 tally did not reproduce" >&2; exit 1; }
+echo "S6-D OK: full n=9 census matches the paper's reference tally exactly; engine validated for n=11"
