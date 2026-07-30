@@ -136,10 +136,12 @@ Three of the paper's exhaustive censuses reproduced at full published scale on t
 
 **Divergent — cA3 double regularity.** `sec5_a3_boundary/README.md`'s "What to expect" says `analyze_ce1068.R` prints `doubly-regular (all==3): TRUE`. The script prints **FALSE**, and it is right: cA3's triangles-per-arc distribution is **{2: 22, 3: 11, 4: 22}**. It cannot be doubly regular — the doubly regular circulant on 11 vertices is Paley(11), whose connection set is the quadratic residues {1,3,4,5,9} with a constant 3, whereas cA3's is {1,2,3,4,6}. (Paley(43) *is* doubly regular, at 11 triangles per arc, confirmed here.) No §5 claim depends on it; this is a documentation error in the reproducibility package, not a result.
 
-**Partial — MAS(Paley43) ≤ 543, and the level-1 layer.** Both need the q = 43 δ ≤ 2 layer tables, documented at ~48 GB of scratch and confirmed by the engine's own Burnside ceiling (48.28 GB). This machine had **43 GB free on a 96 %-full boot volume**, so the build was not attempted — filling that volume is a real hazard, not a budget question. Consequently:
+**Partial — MAS(Paley43) ≤ 543, and the level-1 layer.** Both need the q = 43 δ ≤ 2 layer tables, documented at ~48 GB of scratch and confirmed by the engine's own Burnside ceiling (48.28 GB). This machine has had **40–43 GB free on a 96 %-full boot volume**, so the build was not attempted — filling that volume is a real hazard, not a budget question. Consequently:
 
 - MAS ≥ 543 is established here independently; MAS ≤ 543 rests on the paper's certification.
 - The screen was run exhaustively on **level 0** (19,651 orbits, 17.7 M orders). The full proof needs **level ≤ 1** (1,841,303 orbits, 1.66 B orders) — about 93× more. What is established is that no 5-realization can have *both* top voters at level 0.
+
+A node for the complete proof is **built and queued**: `S7-D` runs the package's own `reproduce_paley43.sh` end to end, with a pre-flight that refuses to start below 60 GB free and a disk watchdog that aborts before the volume is endangered, keeping partial layer tables in scratch so a later run resumes rather than restarts. It needs about 20 GB more free space; note that RAM is *not* the constraint (~5 GB resident against 24 GB physical).
 
 **In flight — §6, N(5) ≥ 12.** The n = 11 census over all D₁₁ = 903,753,248 tournaments is running as this is written (256 gentourng slices, 7 workers, ~14 min per slice). Held to 7 workers rather than the documented 8 because each slice is a 4-process pipeline and this laptop is capped at 10 cores — and unrelated jobs of the user's were competing for cores throughout. Measured throughput projects **~8.5 h wall / ~60 core-hours**, against the documented 4.5–5.5 h on 8 uncontended cores.
 
@@ -182,4 +184,5 @@ What a full-scale reproduction still needs is modest and specific: **~15 GB more
 | S4 | [`orx/s4-theorem-4-1-fas-hs3-for-every-tournament-on-n`](https://github.com/Leonardini/Tournaments/tree/orx/s4-theorem-4-1-fas-hs3-for-every-tournament-on-n) | Theorem 4.1 over 9,932,002 tournaments |
 | S6-D | [`orx/s6-d-triple-local-csp-engine-at-n-9-full-census`](https://github.com/Leonardini/Tournaments/tree/orx/s6-d-triple-local-csp-engine-at-n-9-full-census) | complete n = 9 census, exact tally match |
 | S6-D1 | [`orx/s6-d1-n-11-census-every-11-vertex-tournament-is`](https://github.com/Leonardini/Tournaments/tree/orx/s6-d1-n-11-census-every-11-vertex-tournament-is) | n = 11 census → N(5) ≥ 12 (in flight) |
+| S7-D | [`orx/s7-d-full-level-1-shell-the-complete-paley-43-pr`](https://github.com/Leonardini/Tournaments/tree/orx/s7-d-full-level-1-shell-the-complete-paley-43-pr) | the complete proof over the full level-≤ 1 shell — queued, disk-gated |
 | S5-E | [`orx/s5-e-ca3-battery-the-k-3-threshold-is-necessary`](https://github.com/Leonardini/Tournaments/tree/orx/s5-e-ca3-battery-the-k-3-threshold-is-necessary) | cA3: threshold necessary, not sufficient, 3/3 engines |
