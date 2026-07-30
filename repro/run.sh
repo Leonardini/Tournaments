@@ -1,55 +1,86 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# BASELINE NODE — package-wide fast verification.
+# S4 — Theorem 4.1: FAS = HS3 for every tournament on n <= 10.
 #
-# Runs the repository's own quick verifier, check_all.sh: 11 self-checks spanning
-# §3-§7 plus the CPLEX set-cover demo. Establishes that this machine's toolchain
-# reproduces the package's shipped claims before any heavy node is launched.
+# The paper's §4 result: on every tournament with at most 10 vertices, the minimum
+# feedback arc set equals the minimum hitting set of directed 3-cycles. (Theorem 2.1
+# gives one inequality analytically; the census establishes equality exhaustively, and
+# §4 then exhibits the first counterexamples at n = 11.)
 #
-# Metric: PASS / SKIP / FAIL counts (target PASS=11, FAIL=0 — CPLEX is installed
-# here, so the normally-skipped Rcplex check should also run).
+# hs3fas.c computes both sides EXACTLY per tournament — FAS via a Held-Karp maximum-
+# acyclic-subgraph DP over all 2^n vertex subsets, HS3 via branch-and-bound with a
+# 20,000,000-node limit. A tournament with HS3 < FAS prints MISMATCH; a B&B blow-up
+# prints HARD. Theorem 4.1 requires both counts to be 0 at every n.
+#
+# Full published scale, no downscaling: complete catalogues for every n from 3 to 10,
+# 9,733,056 tournaments at n = 10 alone. Small n come from nauty gentourng; n = 9 and
+# n = 10 use McKay's catalogues already on this machine. The two sources use opposite
+# bit conventions for the arc triangle, which enumerate the same isomorphism classes up
+# to converse — and FAS and HS3 are both converse-invariant, so the verdict is the same.
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
 
 sysinfo
+[ -x "$GENTOURNG" ] || { echo "gentourng not found at $GENTOURNG" >&2; exit 1; }
+watchdog_start
+trap watchdog_stop EXIT
 
-banner "check_all.sh — quick verification of every section"
-t0=$SECONDS
-set +e
-./check_all.sh 2>&1 | tee "$SCRATCH/check_all.out"
-set -e
-elapsed=$((SECONDS - t0))
+banner "build"
+cc -O3 -o "$SCRATCH/hs3fas" sec4_fas_hs3/hs3fas.c
+echo "built hs3fas (exact Held-Karp MAS + exact minimum 3-cycle hitting set)"
 
-# strip the ANSI colouring check_all.sh emits before parsing
-out=$(sed $'s/\033\\[[0-9;]*m//g' "$SCRATCH/check_all.out")
-summary=$(printf '%s' "$out" | grep -E 'ALL CHECKS OK|SOME CHECKS FAILED' || true)
-np=$(printf '%s' "$out" | grep -c '^  PASS ' || true)
-ns=$(printf '%s' "$out" | grep -c '^  SKIP ' || true)
-nf=$(printf '%s' "$out" | grep -c '^  FAIL ' || true)
+# number of tournaments on n vertices up to isomorphism (OEIS A000568)
+declare -a EXPECT=([3]=2 [4]=4 [5]=12 [6]=56 [7]=456 [8]=6880 [9]=191536 [10]=9733056)
 
-banner "results"
-metric wall_seconds "$elapsed"
-metric checks_pass "$np"
-metric checks_skip "$ns"
-metric checks_fail "$nf"
+banner "exhaustive FAS == HS3 census, n = 3..10"
+tot_all=0; mism_all=0; hard_all=0; allok=1
+for n in 3 4 5 6 7 8 9 10; do
+  case $n in
+    9)  cat="$MCKAY_DIR/tournaments9.txt";  src="McKay catalogue" ;;
+    10) cat="$MCKAY_DIR/tournaments10.txt"; src="McKay catalogue" ;;
+    *)  cat="$SCRATCH/t$n.txt"; src="gentourng"; "$GENTOURNG" -q $n 2>/dev/null > "$cat" ;;
+  esac
+  [ -s "$cat" ] || { echo "missing catalogue for n=$n ($cat)" >&2; exit 1; }
+  t0=$SECONDS
+  out=$("$SCRATCH/hs3fas" "$cat" $n)
+  el=$((SECONDS - t0))
+  echo "  [$src] $out   (${el}s)"
 
-# The individual claims each quick check settles, as paper-value vs observed-value.
-verdict() { [ "$1" = 1 ] && echo aligned || echo divergent; }
-g() { printf '%s' "$out" | grep -qF -- "$1" && echo 1 || echo 0; }
+  cnt=$(sed -n "s/^n=$n: \([0-9]*\) tournaments.*/\1/p"        <<<"$out")
+  mis=$(sed -n 's/.*; \([0-9]*\) with HS3<FAS.*/\1/p'          <<<"$out")
+  hrd=$(sed -n 's/.*; \([0-9]*\) HARD .*/\1/p'                 <<<"$out")
+  verd=$(grep -o 'minFAS == for ALL minHS3' <<<"$out" || true)
 
-claim "sec3.mhp-min-weight-FAS"      "min-weight FAS = 5, unique"        "$(printf '%s' "$out" | grep -q '^  PASS sec3' && echo 'min-weight FAS = 5, unique' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec3')")"
-claim "sec4.Tstar-FAS-gt-HS3"        "FAS = 17 > 16 = HS3"              "$(printf '%s' "$out" | grep -q '^  PASS sec4' && echo 'FAS = 17 > 16 = HS3' || echo 'not confirmed')" "$(verdict "$(g '  PASS sec4')")"
-claim "sec5.cA3-alpha-star"          "alpha* = 2/3 exactly (rational)"  "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 exact' && echo 'alpha* = 2/3 exactly' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 exact')")"
-claim "sec5.cA3-not-3-inducible"     "k=3 INFEASIBLE, k=5 FEASIBLE"     "$(printf '%s' "$out" | grep -q 'PASS sec5: cA3 not-3-real' && echo 'k=3 INFEASIBLE, k=5 FEASIBLE' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: cA3 not-3-real')")"
-claim "sec5.obstacle-certs-47"       "47/47 obstacles certified"        "$(printf '%s' "$out" | grep -q 'PASS sec5: 47/47' && echo '47/47 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 47/47')")"
-claim "sec5.nm1-certs-72"            "72/72 non-margin-1 certified"     "$(printf '%s' "$out" | grep -q 'PASS sec5: 72/72' && echo '72/72 certified' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec5: 72/72')")"
-claim "sec6.counting-bounds"         "N(5) <= 39 regular, <= 38 near-reg" "$(printf '%s' "$out" | grep -q 'PASS sec6: counting' && printf '%s' "$out" | grep -q 'PASS sec6: near-regular' && echo 'both tables assert clean' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec6: counting')" = 1 ] && [ "$(g 'PASS sec6: near-regular')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.dp43-selftest-q7-q11"    "MAS(7)=14, MAS(11)=35 == brute force" "$(printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(7)' && printf '%s' "$out" | grep -q 'PASS sec7: certified MAS(11)' && echo 'both self-tests PASSED' || echo 'not confirmed')" "$(verdict "$( [ "$(g 'PASS sec7: certified MAS(7)')" = 1 ] && [ "$(g 'PASS sec7: certified MAS(11)')" = 1 ] && echo 1 || echo 0)")"
-claim "sec7.cpsat-gauntlet"          "GAUNTLET: PASS"                   "$(printf '%s' "$out" | grep -q 'PASS sec7: CP-SAT' && echo 'GAUNTLET: PASS' || echo 'not confirmed')" "$(verdict "$(g 'PASS sec7: CP-SAT')")"
+  metric "n${n}_tournaments" "$cnt"
+  metric "n${n}_hs3_lt_fas"  "$mis"
+  metric "n${n}_hard"        "$hrd"
+  metric "n${n}_seconds"     "$el"
+
+  ok=1
+  [ "$cnt" = "${EXPECT[$n]}" ] || ok=0
+  [ "$mis" = 0 ] || ok=0
+  [ "$hrd" = 0 ] || ok=0
+  [ -n "$verd" ] || ok=0
+  [ "$ok" = 1 ] || allok=0
+  claim "sec4.thm41-n$n" "${EXPECT[$n]} tournaments, 0 with HS3<FAS, 0 HARD" \
+        "$cnt tournaments, $mis with HS3<FAS, $hrd HARD" \
+        "$([ "$ok" = 1 ] && echo aligned || echo divergent)"
+  tot_all=$((tot_all + cnt)); mism_all=$((mism_all + mis)); hard_all=$((hard_all + hrd))
+  [ "$n" -le 8 ] && rm -f "$SCRATCH/t$n.txt"
+done
+
+banner "aggregate"
+metric total_tournaments_n3_to_n10 "$tot_all"
+metric total_hs3_lt_fas "$mism_all"
+metric total_hard "$hard_all"
+printf '  tournaments swept (n = 3..10): %d\n' "$tot_all"
+printf '  with HS3 < FAS:                %d\n' "$mism_all"
+printf '  unresolved (HARD):             %d\n' "$hard_all"
+claim "sec4.theorem-4.1" "FAS = HS3 for every tournament on n <= 10 (exhaustive)" \
+      "$tot_all tournaments checked, $mism_all with HS3 < FAS, $hard_all unresolved" \
+      "$([ "$allok" = 1 ] && echo aligned || echo divergent)"
 
 banner "verdict"
-echo "$summary"
-echo "PASS=$np SKIP=$ns FAIL=$nf  in ${elapsed}s"
-[ "$nf" -eq 0 ] || { echo "BASELINE FAILED: $nf quick check(s) did not reproduce" >&2; exit 1; }
-echo "BASELINE OK: all $np quick checks reproduce on this machine ($ns skipped)"
+[ "$allok" = 1 ] || { echo "S4: Theorem 4.1 did not reproduce at some n" >&2; exit 1; }
+echo "S4 OK: FAS == HS3 for all $tot_all tournaments on 3 <= n <= 10 — Theorem 4.1 reproduced at full scale"
