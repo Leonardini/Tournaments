@@ -10,9 +10,12 @@
  *   B. group       — G = {x -> ax+b : a in QR, b in Z_43} has order 903 and every
  *                    element is an arc-preserving automorphism
  *   C. seed        — every rep is a permutation of Z_43 with fwd = 543 exactly
- *   D. orbits      — every rep has trivial G-stabiliser (orbit size exactly 903),
- *                    every rep is the lexicographic minimum of its own orbit, and
- *                    all reps lie in distinct orbits
+ *   D. orbits      — every rep has trivial G-stabiliser (orbit size exactly 903) and
+ *                    all reps lie in pairwise distinct orbits, compared by the lexmin
+ *                    image computed here. (The committed seed stores an arbitrary
+ *                    representative per orbit, not the canonical one, so canonicity is
+ *                    derived rather than assumed — razor_screen re-expands each rep over
+ *                    the whole group anyway, so the file needs no canonical form.)
  *   E. arithmetic  — MAS >= 543, alpha* >= 543/903 = 181/301 > 3/5, slack
  *                    5*MAS - 3C = 6, forced top-two level floor(6/4) = 1
  *
@@ -31,7 +34,8 @@ typedef uint8_t u8;
 static int isqr[Q], qrl[Q], NQR, NAUT;
 static int amap[1024][2];
 static u8 adj[Q][Q];                  /* adj[u][v] = 1 iff u -> v */
-static u8 *reps;                      /* [N][Q] */
+static u8 *reps;                      /* [N][Q] the seed as read */
+static u8 *canon;                     /* [N][Q] lexmin image of each rep, computed here */
 static long N;
 static int fail = 0;
 
@@ -41,13 +45,13 @@ static void chk(int ok, const char *what) {
 }
 
 /* ---- per-rep worker: fwd count, stabiliser size, lexmin image ---- */
-typedef struct { long lo, hi; long nbad_fwd, nbad_orb, nbad_canon; } Arg;
+typedef struct { long lo, hi; long nbad_fwd, nbad_orb, n_is_lexmin; } Arg;
 
 static int cmp43(const void *a, const void *b) { return memcmp(a, b, Q); }
 
 static void *worker(void *vp) {
   Arg *A = vp;
-  A->nbad_fwd = A->nbad_orb = A->nbad_canon = 0;
+  A->nbad_fwd = A->nbad_orb = A->n_is_lexmin = 0;
   u8 *imgs = malloc((size_t)NAUT * Q);
   int pos[Q];
   for (long r = A->lo; r < A->hi; r++) {
@@ -70,7 +74,8 @@ static void *worker(void *vp) {
     for (int m = 1; m < NAUT; m++)
       if (memcmp(imgs + (size_t)m * Q, imgs + (size_t)(m - 1) * Q, Q)) distinct++;
     if (distinct != NAUT) A->nbad_orb++;          /* stabiliser must be trivial */
-    if (memcmp(imgs, o, Q)) A->nbad_canon++;      /* rep must be its orbit's lexmin */
+    memcpy(canon + (size_t)r * Q, imgs, Q);       /* imgs[0] = lexmin image of this orbit */
+    if (!memcmp(imgs, o, Q)) A->n_is_lexmin++;    /* informational: is the seed canonical? */
   }
   free(imgs);
   return NULL;
@@ -155,26 +160,25 @@ int main(int argc, char **argv) {
   fclose(f);
   chk(N == 19651, "delta=0 orbit representatives read = 19,651");
 
+  canon = malloc((size_t)N * Q);
   pthread_t th[10]; Arg ar[10];
   for (int i = 0; i < NTH; i++) {
     ar[i].lo = N * (long)i / NTH; ar[i].hi = N * (long)(i + 1) / NTH;
     pthread_create(&th[i], NULL, worker, &ar[i]);
   }
-  long bf = 0, bo = 0, bc = 0;
-  for (int i = 0; i < NTH; i++) { pthread_join(th[i], NULL); bf += ar[i].nbad_fwd; bo += ar[i].nbad_orb; bc += ar[i].nbad_canon; }
-  printf("  reps with fwd != 543: %ld ; nontrivial stabiliser: %ld ; not lexmin: %ld\n", bf, bo, bc);
+  long bf = 0, bo = 0, nlex = 0;
+  for (int i = 0; i < NTH; i++) { pthread_join(th[i], NULL); bf += ar[i].nbad_fwd; bo += ar[i].nbad_orb; nlex += ar[i].n_is_lexmin; }
+  printf("  reps with fwd != 543: %ld ; nontrivial stabiliser: %ld\n", bf, bo);
   chk(bf == 0, "all 19,651 reps have fwd = 543 exactly");
   chk(bo == 0, "all reps have trivial G-stabiliser (orbit = 903 orders)");
-  chk(bc == 0, "all reps are the lexmin of their own G-orbit (canonical)");
+  printf("  (informational) reps that happen to be their orbit's lexmin: %ld/%ld\n", nlex, N);
 
-  /* all reps in distinct orbits: canonical forms must be pairwise distinct */
-  u8 *sorted = malloc((size_t)N * Q);
-  memcpy(sorted, reps, (size_t)N * Q);
-  qsort(sorted, (size_t)N, Q, cmp43);
+  /* distinct orbits: the lexmin images computed above must be pairwise distinct */
+  qsort(canon, (size_t)N, Q, cmp43);
   long distinct = N ? 1 : 0;
-  for (long r = 1; r < N; r++) if (memcmp(sorted + (size_t)r * Q, sorted + (size_t)(r - 1) * Q, Q)) distinct++;
-  printf("  distinct canonical reps: %ld\n", distinct);
-  chk(distinct == N, "all reps lie in pairwise distinct G-orbits");
+  for (long r = 1; r < N; r++) if (memcmp(canon + (size_t)r * Q, canon + (size_t)(r - 1) * Q, Q)) distinct++;
+  printf("  distinct orbit canonical forms: %ld\n", distinct);
+  chk(distinct == N, "all reps lie in pairwise distinct G-orbits (by lexmin image)");
 
   printf("== E. what the seed implies ==\n");
   long orders = N * (long)NAUT;
