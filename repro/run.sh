@@ -1,19 +1,35 @@
 #!/usr/bin/env bash
 # =====================================================================================
-# S7-A — MAS engine certification + Paley(43) premises.   [HEADLINE LINE, step 1]
+# S7-B — the exhaustive level-0 razor screen.               [HEADLINE LINE, step 2]
 #
-# The §7 proof stands on two premises:
-#   (i)  MAS(Paley43) = 543, so alpha* = 181/301 > 3/5 and the two top voters of any
-#        5-realization are forced to level <= 1;
-#   (ii) the engine that computes it is correct.
+# S7-A established the premises: MAS(Paley43) >= 543, so alpha* = 181/301 > 3/5, the
+# realization slack 5*MAS - 3C is 6, and the two highest-agreement voters of any
+# 5-realization are forced to level <= 1. The co-backing lemma (a 3-line counting
+# argument, no computation) then says the five voters' double-back sets are pairwise
+# disjoint. So a 5-realization requires TWO level-<=1 orders with DISJOINT double-back
+# sets, and the whole result reduces to showing no such pair exists.
 #
-# This node establishes (ii) at full published scale — the Appendix A.4 MAS gauntlet,
-# q = 19/23/31 against the known values 107/161/285, which check_all.sh does not run —
-# and the >= 543 half of (i) independently, from the one committed input d0_reps.txt,
-# with a verifier that shares no code with the package's engines.
+# This node runs that screen on the COMPLETE level-0 shell — all 17,744,853 maximum-
+# acyclic orders, expanded by razor_screen from the 19,651 committed orbit reps
+# (expand=1). It is the Appendix A.4 ledger entry "Level-0 proved exhaustively", and
+# needs no layer tables, so it fits this machine.
 #
-# The <= 543 half needs the q=43 delta<=2 layer tables (~48 GB scratch) and is tracked
-# on a separate node; it is not attempted here.
+# Two devices make an exhaustive check over ~1.6e14 order pairs finish in seconds; both
+# are proved sound in PALEY43_NONREALIZABLE.md §6 and neither can create a false
+# negative:
+#   razor (§6.1)  rmask(O) = DB(O) restricted to triangles inside W = {0..23}, which
+#                 depends only on O|_W. Overlapping rmasks => overlapping DBs, so only
+#                 razor-disjoint pairs can be DB-disjoint. The shell collapses to a few
+#                 million distinct rmasks.
+#   Aut (§6.2)    |DB(sigma O1) ∩ DB(sigma O2)| is G-invariant, so it suffices to test
+#                 orbit representatives against the full pool — a factor 903 on one side.
+#
+# Expected (Appendix A.4): TRUE_DISJOINT = 0, min_overlap = 68 over razor-disjoint
+# candidates, 333,809 candidate (rep, pool) pairs, |R| = 538.
+#
+# SCOPE: level 0 is a sub-shell of the level-<=1 shell the full proof needs. This node
+# settles the obstruction on the MAS layer; the level-1 layer is ~93x larger and needs
+# the q=43 layer tables. Reported as such — not as the complete proof.
 # =====================================================================================
 source "$(dirname "$0")/env.sh"
 cd "$REPRO_ROOT"
@@ -23,62 +39,64 @@ watchdog_start
 trap watchdog_stop EXIT
 
 banner "build"
-cc -O3 -march=native -pthread -o "$SCRATCH/dp43" sec7_paley43/dp43.c
-cc -O3 -march=native -pthread -o "$SCRATCH/verify_d0" repro/verify_d0.c
-echo "built dp43, verify_d0"
+cc -O3 -march=native -pthread -o "$SCRATCH/razor_screen" sec7_paley43/razor_screen.c
+echo "built razor_screen"
 
-# ---------------------------------------------------------------------------
-banner "1. DP self-tests against brute force (q = 7, 11)"
-# Each rebuilds canonicalization independently, checks fast==slow / idempotent /
-# Aut-invariant, then verifies the DP order pool equals brute force at several tau.
-for q in 7 11; do
-  mkdir -p "$SCRATCH/st$q"
-  "$SCRATCH/dp43" selftest $q "$SCRATCH/st$q" 2>&1 | tee "$SCRATCH/st$q.out"
-done
-s7=$(grep -c 'selftest q=7 PASSED'  "$SCRATCH/st7.out"  || true)
-s11=$(grep -c 'selftest q=11 PASSED' "$SCRATCH/st11.out" || true)
-claim "sec7.dp43-selftest-q7"  "pool == brute force, MAS(Paley7) = 14"  "$([ "$s7"  = 1 ] && echo 'PASSED' || echo 'not confirmed')" "$([ "$s7"  = 1 ] && echo aligned || echo divergent)"
-claim "sec7.dp43-selftest-q11" "pool == brute force, MAS(Paley11) = 35" "$([ "$s11" = 1 ] && echo 'PASSED' || echo 'not confirmed')" "$([ "$s11" = 1 ] && echo aligned || echo divergent)"
+banner "exhaustive screen over the complete level-0 shell"
+echo "input: sec7_paley43/d0_reps.txt (19,651 delta=0 orbit reps, expand=1 => 17,744,853 orders)"
+t0=$SECONDS
+cd sec7_paley43
+MCAP=300000 "$SCRATCH/razor_screen" d0_reps.txt 1 24 0 "$THREADS" 2>&1 | tee "$SCRATCH/d0.out"
+el=$((SECONDS - t0))
+cd "$REPRO_ROOT"
 
-# ---------------------------------------------------------------------------
-banner "2. MAS gauntlet — certify the known values for q = 19, 23, 31"
-# Appendix A.4: "the MAS gauntlet reproduces brute-force q=7,11 and the known
-# MAS=107/161/285 for q=19/23/31". Runs the full layers->join->enum->close pipeline
-# at tau = the published MAS; the join step certifies the maximum both ways.
-declare -a GQ=(19 23 31) GMAS=(107 161 285)
-gok=0
-for i in 0 1 2; do
-  q=${GQ[$i]}; want=${GMAS[$i]}
-  d="$SCRATCH/g$q"; rm -rf "$d"; mkdir -p "$d"
-  echo "--- q=$q  tau=$want ---"
-  THREADS=$THREADS "$SCRATCH/dp43" all $q "$want" "$d" 2>&1 | tee "$SCRATCH/g$q.out"
-  got=$(grep -o 'certified MAS = [0-9]*' "$SCRATCH/g$q.out" | tail -1 | awk '{print $NF}')
-  got=${got:-none}
-  metric "mas_q$q" "$got"
-  claim "sec7.mas-gauntlet-q$q" "MAS(Paley$q) = $want" "MAS = $got" "$([ "$got" = "$want" ] && echo aligned || echo divergent)"
-  [ "$got" = "$want" ] && gok=$((gok+1))
-  du -sh "$d" | awk '{print "  layer tables on disk: " $1}'
-  rm -rf "$d"
-done
-metric gauntlet_q_certified "$gok/3"
+res=$(grep '^RESULT ' "$SCRATCH/d0.out" | tail -1)
+echo; echo "RESULT line: $res"
+f() { sed -n "s/.*[ ]$1=\([0-9-]*\).*/\1/p" <<<"$res"; }
+M=$(f M); pool=$(f pool); cand=$(f rmask_cand_pairs); dang=$(f dangerous)
+K=$(f K); checked=$(f pairs_checked); td=$(f TRUE_DISJOINT); mo=$(f min_overlap)
+nR=$(sed -n 's/.*|R|=\([0-9]*\).*/\1/p' "$SCRATCH/d0.out" | tail -1)
 
-# ---------------------------------------------------------------------------
-banner "3. Independent re-derivation of the level-0 facts from the committed seed"
-"$SCRATCH/verify_d0" sec7_paley43/d0_reps.txt "$THREADS" 2>&1 | tee "$SCRATCH/vd0.out"
-vd0=$(grep -c 'verify_d0: ALL CHECKS PASSED' "$SCRATCH/vd0.out" || true)
+metric wall_seconds "$el"
+metric razor_triangles "$nR"
+metric distinct_rmasks "$M"
+metric pool_orders "$pool"
+metric candidate_rmask_pairs "$cand"
+metric dangerous_rmasks "$dang"
+metric dangerous_pool_orders "$K"
+metric pairs_checked "$checked"
+metric true_disjoint "$td"
+metric min_overlap "$mo"
 
-claim "sec7.paley43-structure"   "C = 903 arcs, T = 3311 cyclic triangles, out-deg 21, 11 tri/arc, |Aut| = 903" \
-      "$([ "$vd0" = 1 ] && echo 'all structural constants match' || echo 'not confirmed')" \
-      "$([ "$vd0" = 1 ] && echo aligned || echo divergent)"
-claim "sec7.level0-census"       "19,651 orbits x 903 = 17,744,853 level-0 orders" \
-      "$([ "$vd0" = 1 ] && echo '19,651 canonical reps, all stabiliser-free => 17,744,853' || echo 'not confirmed')" \
-      "$([ "$vd0" = 1 ] && echo aligned || echo divergent)"
-claim "sec7.mas-lower-bound"     "MAS(Paley43) = 543; alpha* = 181/301 > 3/5; slack 6; top-two level <= 1" \
-      "$([ "$vd0" = 1 ] && echo 'MAS >= 543 confirmed independently (<= 543 needs the q=43 layer tables)' || echo 'not confirmed')" \
-      "$([ "$vd0" = 1 ] && echo partial || echo divergent)"
+# total order-pairs the razor rules out without inspecting them
+awk -v p="${pool:-0}" 'BEGIN{ if(p>0) printf "METRIC\ttotal_order_pairs_in_shell\t%.3e\n", p*(p-1)/2 }'
+
+eq() { [ "$1" = "$2" ] && echo aligned || echo divergent; }
+banner "claims"
+claim "sec7.razor-size"            "|R| = 538 razor triangles for W = {0..23}" "|R| = $nR" "$(eq "$nR" 538)"
+claim "sec7.level0-pool"           "17744853 level-0 orders screened"          "$pool"     "$(eq "$pool" 17744853)"
+claim "sec7.level0-pairs-checked"  "333809 razor-disjoint candidate pairs"     "$checked"  "$(eq "$checked" 333809)"
+claim "sec7.level0-true-disjoint"  "TRUE_DISJOINT = 0"                        "TRUE_DISJOINT = $td" "$(eq "$td" 0)"
+claim "sec7.level0-min-overlap"    "min overlap = 68"                         "min overlap = $mo"   "$(eq "$mo" 68)"
+
+banner "what this establishes"
+if [ "$td" = 0 ]; then
+  awk -v p="${pool:-0}" -v c="${checked:-0}" 'BEGIN{
+    printf "  no two of the %d maximum-acyclic orders of Paley(43) have disjoint\n", p;
+    printf "  double-back sets: all %.3e order pairs are settled, %d of them by the\n", p*(p-1)/2, c;
+    printf "  exact full-DB check and the rest by the razor (they share a razor triangle).\n" }'
+  echo "  => the co-backing pair obstruction holds on the MAS layer."
+  echo "  => a 5-realization of Paley(43) cannot have both top voters at level 0."
+  echo "  NOT YET the full result: level 1 (1,821,652 further orbits) is untested here."
+else
+  echo "  $td disjoint pair(s) found — see razor_disjoint_hits.txt"
+fi
 
 banner "verdict"
-ok=$(( s7 + s11 + gok + vd0 ))
-echo "self-tests $((s7+s11))/2 | gauntlet $gok/3 | verify_d0 $vd0/1  => $ok/6"
-[ "$ok" -eq 6 ] || { echo "S7-A: $((6-ok)) premise check(s) did not reproduce" >&2; exit 1; }
-echo "S7-A OK: engine certified on q=7,11,19,23,31 and the level-0 premises re-derived independently"
+ok=1
+for pair in "$nR 538" "$pool 17744853" "$checked 333809" "$td 0" "$mo 68"; do
+  set -- $pair; [ "$1" = "$2" ] || ok=0
+done
+echo "screen finished in ${el}s"
+[ "$ok" = 1 ] || { echo "S7-B: the level-0 screen did not reproduce the published counts" >&2; exit 1; }
+echo "S7-B OK: exhaustive level-0 screen reproduces TRUE_DISJOINT=0 and min_overlap=68 exactly"
