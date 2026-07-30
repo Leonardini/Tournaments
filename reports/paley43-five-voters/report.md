@@ -141,7 +141,9 @@ Three of the paper's exhaustive censuses reproduced at full published scale on t
 - MAS ≥ 543 is established here independently; MAS ≤ 543 rests on the paper's certification.
 - The screen was run exhaustively on **level 0** (19,651 orbits, 17.7 M orders). The full proof needs **level ≤ 1** (1,841,303 orbits, 1.66 B orders) — about 93× more. What is established is that no 5-realization can have *both* top voters at level 0.
 
-**In flight — §6, N(5) ≥ 12.** The n = 11 census over all D₁₁ = 903,753,248 tournaments is running as this is written (256 gentourng slices, 7 workers). Held to 7 rather than the documented 8 because each slice is a 4-process pipeline and this laptop is capped at 10 cores; measured throughput projects ~8 h wall / ~55 core-hours, in line with the documented 4.5–5.5 h on 8 uncontended cores.
+**In flight — §6, N(5) ≥ 12.** The n = 11 census over all D₁₁ = 903,753,248 tournaments is running as this is written (256 gentourng slices, 7 workers, ~14 min per slice). Held to 7 workers rather than the documented 8 because each slice is a 4-process pipeline and this laptop is capped at 10 cores — and three unrelated jobs of the user's were competing for cores throughout. Measured throughput (10 slices in the first 20 minutes) projects **~8.5 h wall / ~60 core-hours**, against the documented 4.5–5.5 h on 8 uncontended cores.
+
+Worth recording: the projection this reproduction made from the n = 9 timings (≈11 core-hours) was far too optimistic, because it scaled only the `margin1_scan` stage. At n = 11, `cert_m1k5` dominates — 58 % of tournaments are non-3-inducible there versus 9.2 % at n = 9, and the per-instance CSP is costlier. The package's own 4.5–5.5 h figure is the reliable one.
 
 **Not attempted.** The §5 n = 10 census (9,733,056 → 1,013 counterexamples, CPU-hours), cA6's 9-voter certificate (its input bitstring is not shipped), and the appendix CPLEX-only tools (`gen_duals.R` needs `cert_pool.R`, which the package does not include).
 
@@ -163,7 +165,7 @@ Three of the paper's exhaustive censuses reproduced at full published scale on t
 | §6 N(5) ≥ 12 (n = 11 census) | **in flight** |
 | §5 n = 10 census; cA6 | **not attempted** |
 
-Across all nodes: **46 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute for everything except the n = 11 census: **under 4 minutes of wall clock**, peak resident memory 0.23 GB, no run growing swap by more than 1.3 GB.
+Across all nodes: **46 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute for everything except the n = 11 census: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
 
 What a full-scale reproduction still needs is modest and specific: **~15 GB more free disk**. With ~50 GB of scratch, `./reproduce_paley43.sh` rebuilds the δ ≤ 2 layer tables (~hours), enforces the census identity 1,841,303 × 903 = 1,662,696,609, and runs the same screen over the level-≤ 1 shell — closing both the MAS upper bound and the level-1 layer. Every other component of the proof is reproduced here.
 
