@@ -83,6 +83,20 @@ DW_PID=$!
 trap 'watchdog_stop; kill "$DW_PID" 2>/dev/null || true' EXIT
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# MEMORY: dp43's chunk buffers, not its layer array, are what overflow this machine.
+# With the default CHUNKMB=16 the CHUNK-scaled allocations are
+#   runbuf   KMAX*CHUNK*8                    = 2.00 GB
+#   freelist (KMAX+QCAP+NTH+2)*CHUNK*8       = 2.38 GB   (nbuf = 142 buffers)
+#   master slack  KMAX*CHUNK*8               = 2.00 GB
+# ~6.4 GB of pure batching overhead. Measured on this 24 GB machine, L20 peaked at
+# 26 GB phys_footprint and was killed; L21/L22 have larger arrays still. CHUNK only
+# controls how records are grouped through the sort/merge, so the layer CONTENTS are
+# identical at any setting — this trades merge passes (slower) for memory, and the
+# 20 layers already banked at CHUNKMB=16 remain valid and resumable.
+export CHUNKMB="${CHUNKMB:-2}"
+echo "CHUNKMB=$CHUNKMB (default 16) — trims ~5.6 GB of chunk buffers off the peak"
+
 banner "reproduce_paley43.sh — stages 0-4 (the package's own driver, unchanged)"
 t0=$SECONDS
 set +e
