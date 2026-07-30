@@ -157,11 +157,21 @@ Three, none of which touches a result. Listed because two cost a reader time and
 
 A node for the complete proof is **built and queued**: `S7-D` runs the package's own `reproduce_paley43.sh` end to end, with a pre-flight that refuses to start below 60 GB free and a disk watchdog that aborts before the volume is endangered, keeping partial layer tables in scratch so a later run resumes rather than restarts. It needs about 20 GB more free space; note that RAM is *not* the constraint (~5 GB resident against 24 GB physical).
 
-**In flight — §6, N(5) ≥ 12.** The n = 11 census over all D₁₁ = 903,753,248 tournaments is running as this is written (256 gentourng slices, 7 workers, ~14 min per slice). Held to 7 workers rather than the documented 8 because each slice is a 4-process pipeline and this laptop is capped at 10 cores — and unrelated jobs of the user's were competing for cores throughout. Measured throughput projects **~8.5 h wall / ~60 core-hours**, against the documented 4.5–5.5 h on 8 uncontended cores.
+**Aligned — §6, N(5) ≥ 12, at full scale.** The n = 11 census completed over all D₁₁ = 903,753,248 tournaments (256 gentourng slices, 7 workers, **5 h 51 m wall / 41.0 core-hours**), solver-free. Every line of the paper's aggregate matched exactly:
 
-The first attempt was killed at the 71-minute mark by the reproduction's own memory watchdog — a false positive worth recording, because it is a trap for anyone monitoring memory on a shared laptop. The watchdog charged the run with a 3.97 GB rise in machine-wide swap while the run itself held **0.10 GB** resident; the actual cause was an unrelated 3.97 GB process of the user's. A correct trigger needs *both* halves: pressure exists **and** this run causes it. The watchdog now kills outright only on the run's own RSS passing 12 GB, and charges swap growth to the run only when its RSS is at least 2 GB — otherwise it warns and continues. (An earlier iteration had made the opposite mistake, thresholding on *absolute* swap on a laptop that idles at 7–20 GB of swap in use.) The watchdog is monitoring only; it never touched a computation, and the census resumed from its 46 already-banked slices rather than recomputing them.
+| quantity | paper | observed |
+|---|---|---|
+| total tournaments | 903,753,248 (= D₁₁) | **903,753,248** |
+| margin-1 3-inducible | 362,587,120 | **362,587,120** |
+| 3-inducible, not margin-1 | 20,038,128 | **20,038,128** |
+| not 3-inducible | 521,128,000 | **521,128,000** |
+| of those, margin-1 5-inducible | 521,128,000 | **521,128,000** |
+| witnesses independently verified | all | **521,128,000** |
+| residual needing the ILP | 0 | **0** |
 
-Worth recording: the projection this reproduction made from the n = 9 timings (≈11 core-hours) was far too optimistic, because it scaled only the `margin1_scan` stage. At n = 11, `cert_m1k5` dominates — 58 % of tournaments are non-3-inducible there versus 9.2 % at n = 9, and the per-instance CSP is costlier. The package's own 4.5–5.5 h figure is the reliable one.
+`n11_aggregate.sh` passed all of its own guards — 256 slices present and internally consistent, the three stage tallies mutually consistent per slice, and `COMPLETENESS CHECK PASSED: total == D_11 == 903,753,248` — ending in `=> every 11-vertex tournament is 5-inducible: N(5) >= 12 [PROVEN, no ILP needed]`. The ILP fallback was never invoked.
+
+Two operational notes. The run is recorded `failed` for a harness reason only: the census and aggregate both completed and printed the verdict, then the script died on its own EXIT trap, where `kill 0` signals the whole process group including the script itself. And the throughput tracked machine contention closely — 0.42 slices/min while unrelated jobs drove swap to 33 GB, recovering to 0.67 once that eased. The projection this reproduction made from n = 9 scan throughput (~11 core-hours) was 4× optimistic against the true 41; `cert_m1k5` dominates at n = 11, where 58 % of tournaments are non-3-inducible versus 9.2 % at n = 9. The package's documented 4.5–5.5 h on 8 uncontended cores is the reliable guide.
 
 **Not attempted.** The §5 n = 10 census (9,733,056 → 1,013 counterexamples, CPU-hours), cA6's 9-voter certificate (its input bitstring is not shipped), and the appendix CPLEX-only tools (`gen_duals.R` needs `cert_pool.R`, which the package does not include).
 
@@ -180,10 +190,10 @@ Worth recording: the projection this reproduction made from the n = 9 timings (�
 | §6 counting bounds N(5) ≤ 39 / ≤ 38 | **aligned** — assertion tables clean |
 | §5 47/47 and 72/72 solver-free obstacle certificates | **aligned** |
 | §3 MHP counterexample, min-weight FAS = 5 unique | **aligned** |
-| §6 N(5) ≥ 12 (n = 11 census) | **in flight** |
+| §6 N(5) ≥ 12 (n = 11 census) | **aligned** — all 903,753,248 tournaments, every tally line exact |
 | §5 n = 10 census; cA6 | **not attempted** |
 
-Across all nodes: **46 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute for everything except the n = 11 census: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
+Across all nodes: **53 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute, excluding the n = 11 census's 5 h 51 m: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
 
 What a full-scale reproduction still needs is modest and specific: **~15 GB more free disk**. With ~50 GB of scratch, `./reproduce_paley43.sh` rebuilds the δ ≤ 2 layer tables (~hours), enforces the census identity 1,841,303 × 903 = 1,662,696,609, and runs the same screen over the level-≤ 1 shell — closing both the MAS upper bound and the level-1 layer. Every other component of the proof is reproduced here.
 
