@@ -66,15 +66,27 @@ sysinfo() {
 #     compute) can drive swap up several GB while this run holds 100 MB. Blaming the run for
 #     that killed an 8-hour census at the 71-minute mark.
 #
-# So: kill outright if the run's OWN resident set passes RSS_LIMIT_GB (default 12, half of
-# physical RAM) — then it is unambiguously the problem. Kill on swap growth past
-# SWAP_GROWTH_GB (default 3) only when the run's RSS is at least SWAP_BLAME_RSS_GB (default 2),
-# i.e. large enough to plausibly be the cause. Otherwise warn and keep going: the machine is
-# under pressure from elsewhere and killing this run would not relieve it.
+# So: kill outright if the run's OWN resident set passes RSS_LIMIT_GB — then it is
+# unambiguously the problem. Kill on swap growth past SWAP_GROWTH_GB only when the run's RSS is
+# at least SWAP_BLAME_RSS_GB (default 2), i.e. large enough to plausibly be the cause. Otherwise
+# warn and keep going: the machine is under pressure from elsewhere and killing this run would
+# not relieve it.
+#
+# The two budgets are sized against the heaviest thing this reproduction runs, the q=43 layer
+# build: documented at ~5 GB resident, with a Burnside ceiling of 9.32 GB, observed peaking at
+# 5.94 GB. A 3 GB swap-growth budget is SMALLER than that legitimate footprint — allocating 6-9 GB
+# on a 24 GB machine that already has other tenants pushes a few GB to swap as a matter of course,
+# so the trigger fired on normal operation and killed a healthy build. The resident-set cap is the
+# guard that actually encodes the laptop rule (keep this job's RSS well inside physical RAM), so
+# it is tightened to just above the workload's own ceiling, where a genuine runaway shows up
+# immediately; the swap-growth kill is widened to a backstop for a true runaway rather than a
+# first line of defence.
+#   RSS_LIMIT_GB    11   (just above the 9.32 GB ceiling; was 12)
+#   SWAP_GROWTH_GB   6   (accommodates the documented ~5 GB build; was 3)
 WD_PID=""
 swap_used_gb() { sysctl -n vm.swapusage | awk '{for(i=1;i<=NF;i++) if($i=="used"){gsub(/M/,"",$(i+2)); print $(i+2)/1024; exit}}'; }
 watchdog_start() {
-  local grow="${SWAP_GROWTH_GB:-3}" rmax="${RSS_LIMIT_GB:-12}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
+  local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-11}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
   base=$(swap_used_gb); base=${base:-0}
   printf 'WATCHDOG baseline: swap already in use by the machine = %.2f GB (growth budget %s GB chargeable only above %s GB run RSS, RSS cap %s GB)\n' "$base" "$grow" "$blame" "$rmax"
   ( peak=0
