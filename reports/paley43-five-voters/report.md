@@ -155,7 +155,11 @@ Three, none of which touches a result. Listed because two cost a reader time and
 - MAS ≥ 543 is established here independently; MAS ≤ 543 rests on the paper's certification.
 - The screen was run exhaustively on **level 0** (19,651 orbits, 17.7 M orders). The full proof needs **level ≤ 1** (1,841,303 orbits, 1.66 B orders) — about 93× more. What is established is that no 5-realization can have *both* top voters at level 0.
 
-A node for the complete proof is **built and queued**: `S7-D` runs the package's own `reproduce_paley43.sh` end to end, with a pre-flight that refuses to start below 60 GB free and a disk watchdog that aborts before the volume is endangered, keeping partial layer tables in scratch so a later run resumes rather than restarts. It needs about 20 GB more free space; note that RAM is *not* the constraint (~5 GB resident against 24 GB physical).
+A node for the complete proof, `S7-D`, was **built and attempted three times, and did not complete**. It runs the package's own `reproduce_paley43.sh` end to end, with a pre-flight refusing to start below 60 GB free and a disk watchdog that aborts before the volume is endangered, keeping partial layer tables in scratch so a later run resumes. **17 of its 22 layers are banked** (4.6 GB); a future run picks up at layer 17.
+
+The blocker moved during the day, and the distinction matters. In the morning it was **disk**: 40 GB free against a ~48 GB requirement. That was cleared — thinning Time Machine local snapshots to the 3 newest plus an external backup took free space to 95 GB, and relieving the volume let the swap file shrink from 33.8 GB to 9.2 GB alongside it. By the afternoon the blocker was **RAM**. The first two attempts died on defects in this reproduction's own watchdog (a swap-growth budget smaller than the build's documented ~5 GB footprint; then a process-group kill that reaped the shell but not `dp43`, leaving an orphan that starved the next attempt). Both were fixed and verified. The third attempt was killed correctly: swap grew 6.52 GB while the run held 6.26 GB, roughly one-for-one, at a moment when the machine had **0.07 GB of free physical RAM** of 24 GB, with 9.47 GB compressed and 28.6 GB already swapped under an unrelated 6.64 GB job. With no free physical memory, every GB the build allocates displaces a GB to swap, so the watchdog was enforcing precisely the rule it exists for.
+
+What the node needs is therefore not a code change but ~6–9 GB of genuinely free RAM for 2–4 h — an overnight run, or a pause of the competing workload.
 
 **Aligned — §6, N(5) ≥ 12, at full scale.** The n = 11 census completed over all D₁₁ = 903,753,248 tournaments (256 gentourng slices, 7 workers, **5 h 51 m wall / 41.0 core-hours**), solver-free. Every line of the paper's aggregate matched exactly:
 
@@ -191,6 +195,7 @@ Two operational notes. The run is recorded `failed` for a harness reason only: t
 | §5 47/47 and 72/72 solver-free obstacle certificates | **aligned** |
 | §3 MHP counterexample, min-weight FAS = 5 unique | **aligned** |
 | §6 N(5) ≥ 12 (n = 11 census) | **aligned** — all 903,753,248 tournaments, every tally line exact |
+| §7 full level-≤ 1 shell (MAS ≤ 543 + level-1 layer) | **not completed** — attempted 3x, 17/22 layers banked; blocked by available RAM, not by the node |
 | §5 n = 10 census; cA6 | **not attempted** |
 
 Across all nodes: **53 claim checks aligned, 2 divergent (both explained, neither affecting a paper claim), 1 partial.** Total compute, excluding the n = 11 census's 5 h 51 m: **about five minutes of wall clock** (307 s across seven runs), peak resident memory 0.23 GB, and no run grew swap by more than 1.3 GB.
