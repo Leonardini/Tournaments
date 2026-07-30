@@ -81,7 +81,9 @@ sysinfo() {
 # it is tightened to just above the workload's own ceiling, where a genuine runaway shows up
 # immediately; the swap-growth kill is widened to a backstop for a true runaway rather than a
 # first line of defence.
-#   RSS_LIMIT_GB    11   applied to phys_footprint (anonymous), not RSS
+#   RSS_LIMIT_GB    20   applied to phys_footprint, not RSS. The layer build was MEASURED
+#                        at 15 GB during L19 and projects to ~17-18 GB at L21/L22 -- the
+#                        package's documented '~5 GB' is far short of the real delta<=2 build.
 #   SWAP_GROWTH_GB   6   (accommodates the documented ~5 GB build; was 3)
 WD_PID=""
 swap_used_gb() { sysctl -n vm.swapusage | awk '{for(i=1;i<=NF;i++) if($i=="used"){gsub(/M/,"",$(i+2)); print $(i+2)/1024; exit}}'; }
@@ -111,10 +113,11 @@ kill_run_tree() {                     # $1 = root pid, $2 = pid to spare (the ca
   [ "$1" = "${2:-0}" ] || kill -KILL "$1" 2>/dev/null || true
 }
 watchdog_start() {
-  local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-11}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
+  local grow="${SWAP_GROWTH_GB:-6}" rmax="${RSS_LIMIT_GB:-20}" blame="${SWAP_BLAME_RSS_GB:-2}" root=$$ base
   base=$(swap_used_gb); base=${base:-0}
   printf 'WATCHDOG baseline: swap already in use by the machine = %.2f GB (growth budget %s GB chargeable only above %s GB run RSS, RSS cap %s GB)\n' "$base" "$grow" "$blame" "$rmax"
-  ( peak=0
+  ( set +e
+    peak=0
     while :; do
       sleep 30
       local swap rss
@@ -128,13 +131,13 @@ watchdog_start() {
       # Monitor calls Memory) summed over the tree, and log RSS alongside for context.
       pids=$(ps -Ao ppid=,pid= | awk -v r="$root" '
         { par[$2]=$1 } END { for (p in par) { q=p; d=0
-            while (q!="" && q!=1 && d<40) { if (q==r) { print p; break } q=par[q]; d++ } } }')
+            while (q!="" && q!=1 && d<40) { if (q==r) { print p; break } q=par[q]; d++ } } }' || true)
       rss=$(ps -Ao rss=,pid= | awk -v L="$pids" 'BEGIN{split(L,a," "); for(i in a) want[a[i]]=1}
               want[$2]{s+=$1} END{printf "%.2f", s/1048576}')
       mem=$(for pp in $pids; do footprint -p "$pp" 2>/dev/null | awk '/phys_footprint:/{
                 v=$2; u=$3;
                 if (u=="GB") v*=1048576; else if (u=="MB") v*=1024;
-                print v; exit}'; done | awk '{s+=$1} END{printf "%.2f", s/1048576}')
+                print v; exit}' || true; done | awk '{s+=$1} END{printf "%.2f", s/1048576}' || true)
       rss=${rss:-0}; mem=${mem:-0}
       awk -v s="$swap" -v b="$base" -v m="$mem" -v r="$rss" 'BEGIN{printf "WATCHDOG  swap=%.2fGB (+%.2f vs baseline)  run_mem=%.2fGB (rss %.2fGB, incl. mmapped layer files)\n", s, s-b, m, r}'
       peak=$(awk -v a="$peak" -v b="$mem" 'BEGIN{print (b>a)?b:a}')
