@@ -5,12 +5,12 @@
 # stays constant (the whole catalogue as matrices would be ~10 GB in one go).
 #
 # INFILE  = McKay's order-10 catalogue, one tournament per line as C(10,2)=45 upper-triangular bits
-#           (download tournaments10.txt from https://users.cecs.anu.edu.au/~bdm/data/digraphs.html —
-#            447 MB, too large to ship in this repo).
+#           (447 MB, too large to ship in this repo: fetch it once with `./get_data.sh n10` from the
+#            repo root, which downloads and verifies it into data/mckay/tournaments10.txt).
 # OUTDIR  = directory to fill with chunk_000.RData, chunk_001.RData, ...
 # CHUNKSIZE (default 10000) keeps the chunk count under 1000 for the full 9,733,056 catalogue (%03d).
 #
-# Run from this folder, e.g.:  Rscript make_chunks10.R tournaments10.txt out/chunks10
+# Run from this folder, e.g.:  Rscript make_chunks10.R ../../data/mckay/tournaments10.txt out/chunks10
 
 args <- commandArgs(trailingOnly = TRUE)
 infile <- args[1]; outdir <- args[2]

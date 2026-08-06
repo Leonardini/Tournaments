@@ -19,9 +19,11 @@ mkdir -p "$SCRATCH"
 
 # External inputs that are not committed (see the package's "Data policy"):
 #   - nauty 2.8.6 gentourng, for whole-catalogue tournament generation
-#   - McKay's order-9 / order-10 tournament catalogues
-export GENTOURNG="${GENTOURNG:-$HOME/Downloads/DownloadedSoftware/nauty2_8_6/gentourng}"
-export MCKAY_DIR="${MCKAY_DIR:-$HOME/Downloads/NonPriority/Conjectures/KemenyMedian/Tournaments/SourceFiles}"
+#     (brew install nauty / apt-get install nauty; both name it nauty-gentourng)
+#   - McKay's order-9 / order-10 tournament catalogues, which ./get_data.sh puts in data/mckay/
+export GENTOURNG="${GENTOURNG:-$(command -v gentourng || command -v nauty-gentourng || \
+                                 echo "$HOME/Downloads/DownloadedSoftware/nauty2_8_6/gentourng")}"
+export MCKAY_DIR="${MCKAY_DIR:-$REPRO_ROOT/data/mckay}"
 
 banner() { printf '\n======== %s ========\n' "$*"; }
 
