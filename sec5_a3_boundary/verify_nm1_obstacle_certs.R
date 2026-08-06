@@ -6,6 +6,9 @@
 #   signed y : Sum y = 1, exact signed Held-Karp weighted-MAS(y) <= p/q     => alpha^= <= p/q
 #   together alpha^= = p/q, and we assert p/q < 2/3.
 suppressMessages(library(gmp))
+# progress on stderr only (base R; not part of the certification) — see common/progress.R
+if (file.exists("../common/progress.R")) source("../common/progress.R") else
+  { progress <- function(...) invisible(); progress_done <- function() invisible() }
 CERTS <- commandArgs(trailingOnly = TRUE)[1]; if (is.na(CERTS)) CERTS <- "n9_nm1_obstacle_certs.rds"
 C <- readRDS(CERTS)
 
@@ -21,17 +24,21 @@ wmas <- function(af, at, y, n) {
   g[2^n]
 }
 
-ok <- 0; TWO3 <- as.bigq(2L, 3L)
+ok <- 0; TWO3 <- as.bigq(2L, 3L); ncert <- length(C); icert <- 0L
 for (cc in C) {
+  icert <- icert + 1L; progress(icert, ncert, "non-margin-1 obstacles certified (exact signed Held-Karp)")
   pq <- as.bigq(cc$alpha); x <- as.bigq(cc$x); y <- as.bigq(cc$y); E <- length(cc$af); cuts <- cc$cuts
   P  <- (sum(x) == 1L) && all(x >= 0) &&
         all(sapply(1:E, function(ee) sum(x[cuts[, ee] == 1]) == pq))   # EXACT coverage = p/q
   Dl <- (sum(y) == 1L) && (wmas(cc$af, cc$at, y, cc$n) <= pq)          # signed => alpha <= p/q
   below <- (pq < TWO3)
-  if (P && Dl && below) ok <- ok + 1 else
+  if (P && Dl && below) ok <- ok + 1 else {
+    progress_done()
     cat(sprintf("  FAIL key=%s alpha=%s  primal=%s dual=%s below2/3=%s\n",
                 if (!is.null(cc$key)) substr(cc$key, 1, 12) else "?", cc$alpha, P, Dl, below))
+  }
 }
+progress_done()
 vals <- sort(unique(sapply(C, function(z) z$alpha)))
 cat(sprintf("STATIC (gmp-only) certification: %d/%d non-margin-1 obstacles, exact alpha^= = p/q < 2/3 via primal+signed-dual\n",
             ok, length(C)))

@@ -14,6 +14,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+/* ---- progress reporting (stderr only — stdout, i.e. the result, is untouched) -------
+ * The n = 10 catalogue is 9.7M tournaments and takes minutes, so say what is happening:
+ * a live one-line counter on a terminal, a line every 15 s when redirected to a file,
+ * and nothing at all under PROGRESS=0.  Costs one clock read per tournament. */
+static int pr_on, pr_tty; static double pr_last, pr_t0;
+static double pr_now(void){ struct timeval tv; gettimeofday(&tv, 0); return tv.tv_sec + 1e-6 * tv.tv_usec; }
+static void pr_init(void){ const char *e = getenv("PROGRESS");
+    pr_on = !(e && !strcmp(e, "0")); pr_tty = isatty(2); pr_t0 = pr_last = pr_now(); }
+static int pr_due(void){ if (!pr_on) return 0; double t = pr_now();
+    if (t - pr_last < (pr_tty ? 0.5 : 15.0)) return 0; pr_last = t; return 1; }
+static void pr_report(const char *fmt, ...){ va_list ap; va_start(ap, fmt);
+    if (pr_tty) fputc('\r', stderr); fputs("  ", stderr); vfprintf(stderr, fmt, ap);
+    if (!pr_tty) fputc('\n', stderr); fflush(stderr); va_end(ap); }
+static void pr_end(void){ if (pr_on && pr_tty) fputc('\n', stderr); }
 
 static int n, C;
 static int inmask[16];               /* inmask[v] = bitmask of u with u->v */
@@ -101,6 +119,10 @@ int main(int argc, char **argv){
     n = atoi(argv[2]); C = n * (n - 1) / 2;
     char line[128];
     long total = 0, mism = 0, hard = 0;
+    pr_init();
+    long est = 0;                       /* expected #tournaments: every line is C bits + '\n' */
+    if (!fseek(fp, 0, SEEK_END)){ est = ftell(fp) / (C + 1); rewind(fp); }
+    fprintf(stderr, "hs3fas: %s, n=%d, %ld tournaments to check\n", argv[1], n, est);
     while (fgets(line, sizeof line, fp)){
         int L = strlen(line);
         while (L && (line[L-1] == '\n' || line[L-1] == '\r')) line[--L] = 0;
@@ -109,6 +131,9 @@ int main(int argc, char **argv){
         int fas = C - mas();
         build_arcs_tris();
         total++;
+        if (pr_due())
+            pr_report("hs3fas n=%d: %ld/%ld tournaments (%.1f%%), %ld with HS3<FAS, %ld hard  %.0fs",
+                      n, total, est, est ? 100.0 * total / est : 0.0, mism, hard, pr_now() - pr_t0);
         if (pack_lb() == fas) continue;     /* HS3 sandwiched == FAS, no search */
         bestHS = fas + 1; bbnodes = 0; hardflag = 0;
         bb(0, 0);
@@ -124,6 +149,7 @@ int main(int argc, char **argv){
         }
     }
     fclose(fp);
+    pr_end();
     printf("n=%d: %ld tournaments; %ld with HS3<FAS; %ld HARD (unresolved) => minFAS %s minHS3\n",
            n, total, mism, hard, (mism==0 && hard==0) ? "== for ALL" :
            mism ? "!= (see above)" : "== except HARD (need stronger solve)");

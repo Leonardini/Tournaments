@@ -624,6 +624,11 @@ static void transition(int jpar) {
   pthread_cond_init(&TR.cv_prod, NULL); pthread_cond_init(&TR.cv_cons, NULL);
   pthread_t th[64];
   for (int i = 0; i < NTH; i++) pthread_create(&th[i], NULL, expand_worker, NULL);
+  /* Progress heartbeat: a layer takes tens of minutes, and the per-layer summary below
+   * only prints once it is finished. This says how far into the layer we are, on stderr
+   * (stdout stays exactly as before). PROGRESS=0 turns it off. */
+  const char *pe = getenv("PROGRESS"); int hb_on = !(pe && !strcmp(pe, "0"));
+  double hb = now_s();
   for (;;) {
     pthread_mutex_lock(&TR.mu);
     while (TR.qn == 0 && TR.done_workers < NTH) pthread_cond_wait(&TR.cv_cons, &TR.mu);
@@ -632,6 +637,14 @@ static void transition(int jpar) {
     TR.qh = (TR.qh + 1) % QCAP; TR.qn--;
     pthread_cond_broadcast(&TR.cv_prod);   /* wake queue-blocked producers: buffers now park in pend, so the per-chunk return broadcast is gone */
     pthread_mutex_unlock(&TR.mu);
+    if (hb_on && now_s() - hb >= 30.0) {
+      hb = now_s();
+      i64 done = __sync_fetch_and_add(&TR.nextblk, 0) * BLK; if (done > npar) done = npar;
+      fprintf(stderr, "  L%02d: %lld/%lld parents dispatched (%.0f%%), %lld merged so far  %.0fs\n",
+              jc, (long long)done, (long long)npar, npar ? 100.0 * (double)done / (double)npar : 0.0,
+              (long long)nm, now_s() - t0);
+      fflush(stderr);
+    }
     RM.pend[RM.npend].a = c.a; RM.pend[RM.npend].n = c.n;
     RM.npend++; RM.pendrecs += c.n;
     if (RM.pendrecs >= trigger || RM.npend == KMAX) nm = do_runmerge(master, nm);

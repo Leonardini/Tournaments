@@ -11,6 +11,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+/* ---- progress reporting (stderr only — stdout, i.e. the verdict, is untouched) ------
+ * This runs for a couple of minutes (11! orders, then the partition search), so report
+ * where it is: a live one-line counter on a terminal, a line every 15 s when redirected
+ * to a file, and nothing at all under PROGRESS=0. */
+static int pr_on, pr_tty; static double pr_last, pr_t0;
+static double pr_now(void){ struct timeval tv; gettimeofday(&tv, 0); return tv.tv_sec + 1e-6 * tv.tv_usec; }
+static void pr_init(void){ const char *e = getenv("PROGRESS");
+    pr_on = !(e && !strcmp(e, "0")); pr_tty = isatty(2); pr_t0 = pr_last = pr_now(); }
+static int pr_due(void){ if (!pr_on) return 0; double t = pr_now();
+    if (t - pr_last < (pr_tty ? 0.5 : 15.0)) return 0; pr_last = t; return 1; }
+static void pr_report(const char *fmt, ...){ va_list ap; va_start(ap, fmt);
+    if (pr_tty) fputc('\r', stderr); fputs("  ", stderr); vfprintf(stderr, fmt, ap);
+    if (!pr_tty) fputc('\n', stderr); fflush(stderr); va_end(ap); }
+static void pr_end(void){ if (pr_on && pr_tty) fputc('\n', stderr); }
+
 #define N 11
 static const char* rows[N] = {
  "01111100000","00110100011","00011100110","00001110011","01000011101",
@@ -36,6 +55,7 @@ static int inH(uint64_t m){                             /* binary search members
 
 int main(int argc,char**argv){
     int NOSYM = (argc>1);                               /* any arg => enumerate ALL back<=18 as O1 (no symmetry) */
+    pr_init();
     for(int i=0;i<N;i++) for(int j=0;j<N;j++) A[i][j]=rows[i][j]-'0';
     int idx[N][N]; for(int i=0;i<N;i++) for(int j=0;j<N;j++) idx[i][j]=-1;
     for(int u=0;u<N;u++) for(int v=0;v<N;v++) if(A[u][v]){ arcU[E]=u; arcV[E]=v; idx[u][v]=E; E++; }
@@ -50,6 +70,9 @@ int main(int argc,char**argv){
     #define PROC() do{ int pos[N]; for(int r=0;r<N;r++) pos[perm[r]]=r; \
         uint64_t bm=0; for(int e=0;e<E;e++) if(pos[arcU[e]]>pos[arcV[e]]) bm|=1ULL<<e; \
         int b=__builtin_popcountll(bm); hist[b]++; total++; \
+        if(!(total & 0xFFFFF) && pr_due()) \
+            pr_report("phase 1/2: enumerating orders  %ld/39916800 (%.0f%%)  %.0fs", \
+                      total, 100.0*total/39916800.0, pr_now()-pr_t0); \
         if(b<=23) pushH(bm); \
         if(b<=18){ if(NOSYM){ pushO1(bm); } else { uint64_t mn=bm,q=bm; for(int t=1;t<N;t++){ q=apply_perm(q); if(q<mn)mn=q; } if(mn==bm) pushO1(bm); } } \
     }while(0)
@@ -59,6 +82,7 @@ int main(int argc,char**argv){
         if(c[i]<i){ if(i%2==0){int t=perm[0];perm[0]=perm[i];perm[i]=t;} else {int t=perm[c[i]];perm[c[i]]=perm[i];perm[i]=t;} PROC(); c[i]++; i=0; }
         else { c[i]=0; i++; }
     }
+    pr_end();
     fprintf(stderr,"total orders=%ld  |O2/O3 pool (back<=23)|=%ld  |O1 orbit-reps (back<=18)|=%ld\n",total,nH,nO1);
     fprintf(stderr,"back-count histogram (min back=%d => MAS=%d):\n", 0, 0);
     for(int b=0;b<=55;b++) if(hist[b]) fprintf(stderr,"  back=%2d : %ld\n",b,hist[b]);
@@ -67,6 +91,8 @@ int main(int argc,char**argv){
     /* search: O1 (orbit-rep, smallest) ; O2,O3 partition its forward set, back nondecreasing */
     long checks=0;
     for(long a=0;a<nO1;a++){
+        if(pr_due()) pr_report("phase 2/2: partition search  O1 rep %ld/%ld (%.0f%%), %ld candidate triples  %.0fs",
+                               a, nO1, 100.0*a/(double)nO1, checks, pr_now()-pr_t0);
         uint64_t m1=O1[a]; int b1=__builtin_popcountll(m1); uint64_t F1=FULL&~m1;
         for(long j=0;j<nH;j++){
             uint64_t m2=H[j];

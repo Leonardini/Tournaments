@@ -5,6 +5,9 @@
 # 3-cycle dual). So  astar == 2/3 exactly  PROVES  alpha* = 2/3.  Output: "gidx astar is23".
 suppressMessages({ library(lpSolve); library(rcdd); library(gmp) })
 source("../common/alpha_star.R")
+# progress on stderr only (base R) — see common/progress.R; PROGRESS=0 silences it
+if (file.exists("../common/progress.R")) source("../common/progress.R") else
+  { progress <- function(...) invisible(); progress_done <- function() invisible() }
 args <- commandArgs(trailingOnly=TRUE); INM<-args[1]; GID<-args[2]; OUT<-args[3]; n<-10
 inm_lines <- readLines(INM); gidx <- readLines(GID)
 two3 <- as.bigq(2L,3L)
@@ -35,10 +38,12 @@ verify1 <- function(inm){
 con_out <- file(OUT,"w")
 n23<-0; nno<-0
 for(i in seq_along(inm_lines)){
+  progress(i, length(inm_lines), "tournaments verified exactly")
   inm <- as.integer(strsplit(inm_lines[i]," ")[[1]])
   r <- verify1(inm)
   if(r$is23) n23<-n23+1 else nno<-nno+1
   writeLines(sprintf("%s %s %s", gidx[i], r$astar, r$is23), con_out)
 }
+progress_done()
 close(con_out)
 cat(sprintf("DONE %s: alpha*=2/3 exactly: %d ; other: %d (of %d)\n", INM, n23, nno, length(inm_lines)))

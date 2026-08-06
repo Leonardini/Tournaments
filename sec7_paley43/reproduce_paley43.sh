@@ -19,6 +19,8 @@
 #   4  razor_screen on d0 (sanity: 0 seeds) and on delta<=1 (the proof)
 #
 # Resource envelope: <=8 threads, peak RAM ~5 GB, peak disk ~50 GB (layer tables).
+# Stage 2 runs for hours; dp43 prints a per-layer heartbeat on stderr every 30 s so you can see
+# how far into a layer it is. Set PROGRESS=0 to silence it.
 # Usage:  ./reproduce_paley43.sh [from_stage]     (default 0; e.g. `./reproduce_paley43.sh 3`)
 # =====================================================================================
 set -euo pipefail
