@@ -39,9 +39,9 @@ streamed through the three CSP tools), `n11_aggregate.sh` (per-slice consistency
   Checkpointed/resumable. Uses `cplexAPI` via the shared `ilp_realizability.R`.
 - `ilp10_aggregate.R` — combines the worker slices into the n = 10 verdict,
   naming any missing workers before claiming a definitive bound.
-- `make_chunks10.R` — splits McKay's order-10 catalogue (`tournaments10.txt`)
-  into the `chunk_%03d.RData` files `solve_ilp10.R` reads (streamed, constant
-  memory).
+- `make_chunks10.R` — splits McKay's order-10 catalogue (`data/mckay/tournaments10.txt`,
+  fetched by `./get_data.sh n10` from the repo root) into the `chunk_%03d.RData`
+  files `solve_ilp10.R` reads (streamed, constant memory).
 - `verify_5inducible.py` — a **CPLEX-free** OR-Tools CP-SAT check that each
   n = 10 tournament in an inmask file is 5-realizable, re-verifying the profile;
   the free counterpart to this section's ILP.

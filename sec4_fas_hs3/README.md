@@ -20,17 +20,21 @@ installation are in the [top-level README](../README.md#environment). **None req
 CPLEX** (the FAS = HS₃ census runs with only a C compiler and free solvers). `hs3fas.c`
 reads an external **McKay tournament catalogue** — a plain-text file with one tournament
 per line, each line a bit string of length C = n(n−1)/2 (the tournament's triangle of
-arc directions); download it from the McKay digraph-catalogue link in the top-level
-README's [Environment](../README.md#environment) section. The R scripts need no external
-data (the tournaments are hard-coded from their Appendix C inducing profiles).
+arc directions). Get them with `./get_data.sh all` from the repo root; they land in
+`data/mckay/`, verified against their expected size and tournament count. The R scripts
+need no external data (the tournaments are hard-coded from their Appendix C inducing
+profiles).
 
 **How to run.**
 ```sh
+# 0. once, from the repo root: fetch the catalogues (n <= 9 are ~7 MB; n = 10 is a 37 MB download)
+#    ./get_data.sh && ./get_data.sh n10
+
 # 1. hs3fas.c — exhaustive FAS == HS3 census (Theorem 4.1)
 cc -O3 -o hs3fas hs3fas.c
 # usage: ./hs3fas <catalogue.txt> <n>   (catalogue lines must have length n(n-1)/2)
-./hs3fas tournaments10.txt 10        # e.g. the n = 10 McKay catalogue
-#   repeat once per catalogue, e.g. ./hs3fas tournaments8.txt 8, ... up to n = 10
+./hs3fas ../data/mckay/tournaments10.txt 10        # the n = 10 McKay catalogue
+#   repeat once per catalogue, e.g. ./hs3fas ../data/mckay/tournaments8.txt 8, ... up to n = 10
 
 # 2. make_tstar_figs.R — Counterexample 4.2 / Figure 3 (takes no arguments)
 Rscript make_tstar_figs.R           # writes PDFs to the current directory; run from this folder
@@ -43,8 +47,12 @@ Rscript make_conj2_cex_figs.R       # writes PDFs to the current directory; run 
 
 - **`hs3fas.c`** — runtime depends on the catalogue size (number of tournaments, which
   grows sharply with n): small catalogues (n ≤ 8) finish in seconds; the full n = 10
-  catalogue (≈ 9.7 million tournaments) is the longest, on the order of minutes
-  (approximate — not measured here). Prints a final summary line, e.g.
+  catalogue (≈ 9.7 million tournaments) is the longest, about **2 minutes** on one core
+  of a laptop (measured: 113 s, Apple clang, `-O3`). It reports progress on stderr while
+  it runs — a live counter on a terminal, a line every 15 s when redirected to a file
+  (`PROGRESS=0` silences it) — so a long catalogue is visibly progressing:
+  `hs3fas n=10: 5185111/9733056 tournaments (53.3%), 0 with HS3<FAS, 0 hard  60s`.
+  Prints a final summary line on stdout, e.g.
   `n=10: 9733056 tournaments; 0 with HS3<FAS; 0 HARD (unresolved) => minFAS == for ALL minHS3`.
   For Theorem 4.1 the mismatch and HARD counts are both 0, giving the `== for ALL`
   verdict. Any refutation prints up to 20 lines like

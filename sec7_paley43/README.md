@@ -49,7 +49,11 @@ python3 realize5_cpsat.py --gauntlet
 
 - **Full `reproduce_paley43.sh`.** Documented envelope: **≤ 8 threads, ~5 GB peak RAM, ~50 GB scratch
   disk** (layer tables). Stage 2 ("`STAGE 2  q=43 delta<=2 shell layer tables [EXPENSIVE ~hours,
-  ~48 GB]`") is the expensive one — approximately hours per the script header. Stage 3 runs
+  ~48 GB]`") is the expensive one — approximately hours per the script header. Each layer prints its
+  `L%02d: parents ... reps ... Ns` summary on stdout when it completes, and while a layer is still
+  running `dp43` prints a heartbeat on stderr every 30 s
+  (`L07: 41156608/98304000 parents dispatched (42%), ... 612s`), so a long layer is visibly
+  progressing; `PROGRESS=0 ./reproduce_paley43.sh` turns the heartbeat off. Stage 3 runs
   `join(542) → enum(542) → canon_reps` and enforces the **census identity check**: the δ ≤ 1 orbit
   count must equal **1,841,303**, else it dies with "enumeration incomplete". Stage 4 runs the screen
   (a δ = 0 sanity pass that must report `TRUE_DISJOINT=0`, then the real δ ≤ 1 pass), ending in the
