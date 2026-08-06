@@ -30,11 +30,16 @@ manifest.txt
 razor_disjoint_hits.txt
 
 # McKay catalogues and census outputs (download / regenerate)
+data/mckay/
 *.d6
 selfconverse*.txt
 regulartournaments*.txt
 results/
 *.RData
+
+# Python environment (uv sync / python -m venv); pyproject.toml + uv.lock ARE tracked
+.venv/
+.uv/
 
 # OS / editor
 .DS_Store

@@ -1,0 +1,28 @@
+[project]
+name = "tournaments-repro"
+version = "1.0.0"
+description = "Reproducibility package for 'Tournaments determined by three and five voters' (Chindelevitch & Harutyunyan)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+# Everything the package's Python scripts import, outside the standard library.
+# Both are free and pip-installable; no headline result needs anything else.
+dependencies = [
+    "ortools>=9.10",   # CP-SAT: the sec5 / sec6 / sec7 realizability checks
+    "pulp>=2.8",       # CBC: the sec5 orbit-minimal certificate
+]
+
+[project.optional-dependencies]
+# Only for the illustrated reproduction report's figures (repro/figures/make_figures.py).
+figures = ["matplotlib>=3.7"]
+# Only for the tutorial notebook (paley43_five_voters.py).
+notebook = ["marimo>=0.9"]
+
+# NOTE: IBM CPLEX is deliberately NOT listed. The `cplex` package on PyPI is the
+# community edition, which caps models at 1000 variables and is too small for the
+# scripts here. Install the full CPLEX Studio and its bindings by hand if you want
+# the eight optional CPLEX scripts; each one has a free twin (see README).
+
+[tool.uv]
+package = false        # this is a collection of scripts, not an importable package

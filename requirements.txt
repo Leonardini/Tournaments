@@ -1,0 +1,12 @@
+# Python dependencies — the plain-pip route.
+#   python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+# The uv route (recommended, and locked to exact versions by uv.lock) is:
+#   uv sync
+# See pyproject.toml for what each dependency is for.
+
+ortools>=9.10
+pulp>=2.8
+
+# Optional extras (uncomment if you want them):
+# matplotlib>=3.7   # repro/figures/make_figures.py — the report's figures
+# marimo>=0.9       # paley43_five_voters.py — the tutorial notebook
