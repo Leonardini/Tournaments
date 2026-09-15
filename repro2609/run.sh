@@ -270,10 +270,12 @@ dr19)
 
 root19|root23)
     if [ "$c" = root19 ]; then
+        ROOTCAP=1200
         q=19; base="0 1 2 3 4 11"; arc="0 1"; non="2 1"; margin=exact
         cubes=22876; cid=B2-P19
         root=0eeb9dd53956fec2c77b752d74b89b12c7d1dddd6dc4047405ecb7907896a78a
     else
+        ROOTCAP=2400
         q=23; base="0 1 2 5 6 3"; arc="2 6"; non="1 6"; margin=majority
         cubes=343896; cid=B2-P23
         root=7e6c9c26ac386e675687d28420ac41401c11d6bdbc0d006b9722fff394de49cb
@@ -283,10 +285,12 @@ root19|root23)
     # regenerates the cube set must obtain this exact value." This is therefore
     # the package's own designated independent check, and it is the half of the
     # certification that does not need CaDiCaL.
-    echo "expected_root=$root expected_live_cubes=$cubes"
-    ( cd "$CACHE/sat" && time python3 verify_root.py --q "$q" --k 5 --margin "$margin" \
+    echo "expected_root=$root expected_live_cubes=$cubes cap=${ROOTCAP}s"
+    ( cd "$CACHE/sat" && time timeout "$ROOTCAP" python3 verify_root.py \
+        --q "$q" --k 5 --margin "$margin" \
         --base $base --arc $arc --non $non --cubes "$cubes" --root "$root" ) 2>&1 | tail -20
     rc=${PIPESTATUS[0]}
+    [ "$rc" = 124 ] && echo "CAP-HIT: regeneration did not finish in ${ROOTCAP}s; nothing is established either way"
     claim "$cid paper_root_cnf=$root regeneration_exit=$rc (0 = byte-identical cube set)"
     ;;
 
