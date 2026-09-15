@@ -275,7 +275,7 @@ root19|root23)
         cubes=22876; cid=B2-P19
         root=0eeb9dd53956fec2c77b752d74b89b12c7d1dddd6dc4047405ecb7907896a78a
     else
-        ROOTCAP=2400
+        ROOTCAP=5400
         q=23; base="0 1 2 5 6 3"; arc="2 6"; non="1 6"; margin=majority
         cubes=343896; cid=B2-P23
         root=7e6c9c26ac386e675687d28420ac41401c11d6bdbc0d006b9722fff394de49cb
