@@ -265,7 +265,7 @@ dr19)
            | awk '{s+=$1} END {printf "%.1f", s}')
     echo "AUDIT tag=dr19flip hosts=$nhost sat=$nsat other=$((nhost - nsat))" \
          "core_hours=$(awk -v s="$secs" 'BEGIN{printf "%.2f", s/3600}') wall_seconds=$((t1 - t0))"
-    claim "K9 paper='57 orbit representatives, all SAT, 3.59 core-h' observed_sat=$nsat observed_other=$nfail"
+    claim "K9 paper='57 orbit representatives, all SAT, 3.59 core-h' observed_sat=$nsat observed_other=$((nhost - nsat))"
     ;;
 
 root19|root23)
