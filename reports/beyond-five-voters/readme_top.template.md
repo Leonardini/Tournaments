@@ -61,6 +61,7 @@ Every node runs the identical command; what differs between them is one line of
 | [B1 — Paley(23)](https://github.com/Leonardini/Tournaments/tree/orx/2609-13924-b1-paley-23-is-not-5-inducible-hence) | The headline refutation, complete over 8,031 base states | `CLAIMS="build p23"` | `bash repro2609/run.sh` | PLACEHOLDER_B1 | 11 workers, local |
 | [P4/K9/K10 — margin hierarchy](https://github.com/Leonardini/Tournaments/tree/orx/2609-13924-p4-k9-k10-the-margin-hierarchy-at-ord) | Both doubly regular tournaments on 19 vertices at unit margin, plus all 57 arc-orbit reversals | `CLAIMS="build p19m1 dr19"` | `bash repro2609/run.sh` | PLACEHOLDER_P4 | 11 workers, local |
 | [B2-portable — ROOT (CNF)](https://github.com/Leonardini/Tournaments/tree/orx/2609-13924-b2-portable-rebuild-root-cnf-for-both) | Regenerate the certification's cube set from scratch and compare the published hash | `CLAIMS="root19 root23"` | `bash repro2609/run.sh` | PLACEHOLDER_B2 | 1 worker, local, beside B1 |
+| [P2 — Paley(31)](https://github.com/Leonardini/Tournaments/tree/orx/2609-13924-p2-paley-31-is-not-5-inducible) | Extend the method one Paley step further out; does not move $N(5)$ | `CLAIMS="build p31"` | `bash repro2609/run.sh` | **Not run** — configured and pushed, ~2.8 h at 11 workers; ran out of clock | would be 11 workers, local |
 | `main` | Not run as an experiment (publication surface) | — | — | Carries the README, the report and the notebook | — |
 
 ---
