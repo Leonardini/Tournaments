@@ -20,6 +20,12 @@ UPSTREAM_URL=https://github.com/Leonardini/TournamentsBeyond5Voters.git
 UPSTREAM_SHA=48b4a49eabeb7ccb0706428da8fbb84815e41577
 CACHE=$HOME/.cache/openresearch/beyond5-pinned
 OUT=$ROOT/repro2609/out
+# Sweep evidence lives OUTSIDE the per-run repo clone, so a sweep that is
+# interrupted -- by the memory watchdog, by a cancel, by the machine -- can be
+# resumed instead of restarted. Soundness rests on the fingerprint check below:
+# a resume is only allowed when the engine source, the exact argument vector and
+# the base-state count are all unchanged.
+SWEEPS=$HOME/.cache/openresearch/beyond5-sweeps
 BIN=$OUT/kinduce
 # The paper's own runs used a 14-core/24 GB Apple M-series laptop with at most
 # 11 cores concurrently (Appendix A.4). Same machine, same width, so core-hours
@@ -90,23 +96,39 @@ trap 'kill $WD 2>/dev/null' EXIT
 sweep() {
     tag=$1; shift
     n=$1; shift
-    d=$OUT/$tag
-    rm -rf "$d"; mkdir -p "$d/done"
-    : > "$d/times.txt"
+    d=$SWEEPS/$tag
+    src=$(shasum -a 256 "$CACHE/engine/kinduce.c" | cut -d' ' -f1)
+    fp="engine=$src upstream=$UPSTREAM_SHA states=$n args=$*"
+    mkdir -p "$d/done"
+    if [ -f "$d/fingerprint" ] && [ "$(cat "$d/fingerprint")" = "$fp" ]; then
+        echo "sweep tag=$tag RESUMING -- fingerprint matches"
+        echo "  inherited $(ls "$d/done" | wc -l | tr -d ' ') cleared base states"
+    else
+        [ -f "$d/fingerprint" ] && echo "sweep tag=$tag fingerprint CHANGED -- discarding"
+        rm -rf "$d"; mkdir -p "$d/done"; : > "$d/times.txt"
+        printf '%s' "$fp" > "$d/fingerprint"
+    fi
     echo "sweep tag=$tag base_states=$n workers=$NPROC"
+    echo "sweep fingerprint: $fp"
     echo "cmd: kinduce $* --bs-from <i> --bs-to <i+1>   for i in [0,$n)"
     # the engine's self-describing header, printed once for the record
     "$BIN" "$@" --bs-from 0 --bs-to 0 2>&1 | head -30
+    # only the base states not already cleared; the union is audited below
+    todo=$(mktemp)
+    seq 0 $((n - 1)) | while read -r i; do
+        [ -f "$d/done/$i" ] || echo "$i"
+    done > "$todo"
+    echo "sweep todo=$(wc -l < "$todo" | tr -d ' ') of $n"
     t0=$(date +%s)
-    seq 0 $((n - 1)) \
-      | xargs -P "$NPROC" -I{} "$ROOT/repro2609/one_state.sh" {} "$d" "$BIN" "$@"
+    xargs -P "$NPROC" -I{} "$ROOT/repro2609/one_state.sh" {} "$d" "$BIN" "$@" < "$todo"
     t1=$(date +%s)
+    rm -f "$todo"
     echo "sweep_wall_seconds=$((t1 - t0))"
 }
 
 audit() {
     tag=$1; n=$2
-    d=$OUT/$tag
+    d=$SWEEPS/$tag
     ls "$d/done" 2>/dev/null | sort -n > "$d/got.txt"
     seq 0 $((n - 1)) > "$d/want.txt"
     missing=$(comm -13 "$d/got.txt" "$d/want.txt" | wc -l | tr -d ' ')
