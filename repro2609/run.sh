@@ -68,10 +68,11 @@ watchdog() {
     while :; do
         sleep 30
         now=$(sysctl -n vm.swapusage | sed -n 's/.*used = \([0-9.]*\)M.*/\1/p')
-        rss=$(ps -Ao rss,comm | awk '/kinduce/ {s+=$1} END {printf "%.2f", s/1048576}')
+        rss=$(ps -Ao rss,comm | awk '/kinduce/ {s+=$1; n++} END {printf "%.0f", s/1024}')
+        nw=$(pgrep -f "$BIN" | wc -l | tr -d ' ')
         grow=$(awk -v a="$now" -v b="$base" 'BEGIN{printf "%.0f", a-b}')
-        printf 'MEM t=%s kinduce_rss=%sG swap_used=%sM swap_growth=%sM\n' \
-               "$(date -u +%H:%M:%S)" "$rss" "$now" "$grow"
+        printf 'MEM t=%s workers=%s kinduce_rss_total=%sM swap_used=%sM swap_growth=%sM\n' \
+               "$(date -u +%H:%M:%S)" "$nw" "$rss" "$now" "$grow"
         if [ "$grow" -gt 3072 ] 2>/dev/null; then
             echo "MEM ABORT: swap grew ${grow}M over baseline; killing workers"
             pkill -f "$BIN" ; exit 1
@@ -135,12 +136,18 @@ verdict_of() {  # a complete refutation, or not
     fi
 }
 
-single() {  # one unsliced invocation; expects a witness
+# One unsliced invocation, expecting a witness. Capped: a search for a WITNESS
+# may be cut off at no cost to soundness -- it can only fail to find one, never
+# wrongly report its absence. (The opposite of a cap in a refutation, which
+# voids the verdict; that is why the sweeps below are never capped.)
+single() {
     tag=$1; shift
+    cap=$1; shift
     d=$OUT/$tag; mkdir -p "$d"
-    echo "cmd: kinduce $*"
-    "$BIN" "$@" > "$d/log.txt" 2>&1
+    echo "cmd: kinduce $*    [cap ${cap}s]"
+    timeout "$cap" "$BIN" "$@" > "$d/log.txt" 2>&1
     rc=$?
+    [ "$rc" = 124 ] && echo "CAP-HIT after ${cap}s -- no witness within the cap, which refutes nothing"
     grep -E '^(RESULT|VERIFY|SLICE)' "$d/log.txt" | tail -4
     echo "exit=$rc"
 }
@@ -164,20 +171,24 @@ build)
 
 pos)
     say "POSITIVE CONTROL 1 -- P3: Paley(19) IS 5-inducible (margin <= 3)"
-    single p19_sat --paley 19 --k 5 --max-margin 3 --order mrv --inc --base 0 1 2 3 5
+    single p19_sat 900 --paley 19 --k 5 --max-margin 3 --order mrv --inc --base 0 1 2 3 5
     python3 "$V/verify_witness_bits.py" "$OUT/p19_sat/log.txt" \
             "$T/p19_paley.bits" 19 5 --majority; echo "witness_check_exit=$?"
     # P5: the support histogram the paper reports for this witness class
     grep -E '^(support|histogram)' "$OUT/p19_sat/log.txt" | head -3
 
     say "POSITIVE CONTROL 2 -- P6: Paley(23) minus a vertex IS 5-inducible"
-    single p23mv_sat --bits "$T/p23_minus1v.bits" --n 22 --k 5 --margin majority \
-           --order mrv --inc --pool-mb 512 --toporb 0 4
+    # CLAIMS.md records the witness at base state 6,560, so we go straight there
+    # instead of scanning up to it. What is being reproduced is the WITNESS --
+    # re-verified below against the bit string by a program that shares no code
+    # with the search -- not the cost of locating it.
+    single p23mv_sat 900 --bits "$T/p23_minus1v.bits" --n 22 --k 5 --margin majority \
+           --order mrv --inc --pool-mb 512 --bs-from 6560 --bs-to 6561
     python3 "$V/verify_witness_bits.py" "$OUT/p23mv_sat/log.txt" \
             "$T/p23_minus1v.bits" 22 5 --majority; echo "witness_check_exit=$?"
 
     say "POSITIVE CONTROL 3 -- K5: Paley(23) is arc-critical"
-    single p23arc --bits "$T/p23_arcrev.bits" --n 23 --k 5 --margin majority \
+    single p23arc 900 --bits "$T/p23_arcrev.bits" --n 23 --k 5 --margin majority \
            --order mrv --inc --pool-mb 512 --bs-from 1160 --bs-to 1164
     echo "-- witness against the REVERSED host (must verify):"
     python3 "$V/verify_witness_bits.py" "$OUT/p23arc/log.txt" \
@@ -229,7 +240,7 @@ p19m1)
 dr19)
     say "K10 -- the second doubly regular tournament on 19 vertices"
     echo "-- majority-inducible (expect SAT, paper: 176 s):"
-    single dr19_sat --bits "$T/dr19_g2.bits" --n 19 --k 5 --max-margin 3 \
+    single dr19_sat 900 --bits "$T/dr19_g2.bits" --n 19 --k 5 --max-margin 3 \
            --order mrv --inc --toporb 0 1 4 6 7 8 12
     python3 "$V/verify_witness_bits.py" "$OUT/dr19_sat/log.txt" \
             "$T/dr19_g2.bits" 19 5 --majority; echo "witness_check_exit=$?"
@@ -243,16 +254,17 @@ dr19)
     say "K9 -- that tournament is arc-critical at unit margin: 57 orbits, 57 witnesses"
     # |Aut| = 3, so the 171 arcs fall into 57 orbits of size 3. Reversing one
     # representative of each must restore unit-margin inducibility.
-    d=$OUT/dr19flip; rm -rf "$d"; mkdir -p "$d"; nsat=0; nfail=0
-    for f in "$T"/dr19_arcflip/*.bits; do
-        b=$(basename "$f" .bits)
-        timeout 1800 "$BIN" --bits "$f" --n 19 --k 5 --max-margin 1 \
-                --order mrv --inc > "$d/$b.log" 2>&1
-        r=$(grep -c '^RESULT SAT' "$d/$b.log")
-        if [ "$r" -ge 1 ]; then nsat=$((nsat + 1)); else nfail=$((nfail + 1)); fi
-        printf '%s %s\n' "$b" "$(grep '^RESULT ' "$d/$b.log" | tail -1)"
-    done
-    echo "AUDIT tag=dr19flip hosts=$(ls "$T"/dr19_arcflip/*.bits | wc -l | tr -d ' ') sat=$nsat other=$nfail"
+    d=$OUT/dr19flip; rm -rf "$d"; mkdir -p "$d"
+    nhost=$(ls "$T"/dr19_arcflip/*.bits | wc -l | tr -d ' ')
+    t0=$(date +%s)
+    ls "$T"/dr19_arcflip/*.bits \
+      | xargs -P "$NPROC" -I{} "$ROOT/repro2609/one_host.sh" {} "$d" "$BIN" 19 1800
+    t1=$(date +%s)
+    nsat=$(ls "$d"/sat.* 2>/dev/null | wc -l | tr -d ' ')
+    secs=$(grep -ho 'time=[0-9.]*' "$d"/*.log | sed 's/time=//' \
+           | awk '{s+=$1} END {printf "%.1f", s}')
+    echo "AUDIT tag=dr19flip hosts=$nhost sat=$nsat other=$((nhost - nsat))" \
+         "core_hours=$(awk -v s="$secs" 'BEGIN{printf "%.2f", s/3600}') wall_seconds=$((t1 - t0))"
     claim "K9 paper='57 orbit representatives, all SAT, 3.59 core-h' observed_sat=$nsat observed_other=$nfail"
     ;;
 
