@@ -74,8 +74,13 @@ watchdog() {
         printf 'MEM t=%s workers=%s kinduce_rss_total=%sM swap_used=%sM swap_growth=%sM\n' \
                "$(date -u +%H:%M:%S)" "$nw" "$rss" "$now" "$grow"
         if [ "$grow" -gt 3072 ] 2>/dev/null; then
-            echo "MEM ABORT: swap grew ${grow}M over baseline; killing workers"
-            pkill -f "$BIN" ; exit 1
+            # Kill THIS node's own work, never anything else on the machine.
+            # This node builds no engine, so the generic pkill on $BIN would be
+            # toothless; the root rebuild is the only thing here that can grow
+            # memory, and it runs beside an unrelated campaign of the user's
+            # that must not be disturbed.
+            echo "MEM ABORT: swap grew ${grow}M over baseline; stopping the root rebuild"
+            pkill -f "verify_root.py"; pkill -f "$BIN" 2>/dev/null; exit 1
         fi
     done
 }
