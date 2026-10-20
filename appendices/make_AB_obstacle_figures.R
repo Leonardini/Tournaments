@@ -1,5 +1,5 @@
 # Generate the figures for obstacle collections A' (26) and B' (25) of the manuscript
-# (Tournaments_3_and_5_voters.md, Section 6), in the consistent layout of
+# (Tournaments_3_and_5_voters.md, Appendices G.1 and G.2), in the consistent layout of
 # ObsoleteSourceFiles/Plots.R (layout_with_kk), for reproducibility.
 #
 # Data: Counterexamples/Non3RealisabilitySummary.RData

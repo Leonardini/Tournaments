@@ -1,5 +1,5 @@
 # Figures for the v3.0 manuscript:
-#   ObstacleG8 / ObstacleG10 / ObstacleH9 / ObstacleH11 -- the Section 9 family
+#   ObstacleG8 / ObstacleG10 / ObstacleH9 / ObstacleH11 -- the obstacle family
 #     members, drawn in the style of the original ObstructionC8.pdf (organic
 #     layout, orange vertices, navy labels) but with role-labelled vertices and
 #     arcs coloured by class; the defect 4-cycle is thick red.
@@ -109,7 +109,7 @@ weightedMajority = function(voters, mult, n) {
   list(edges = edges, weights = weights)
 }
 
-## ---------- Section 9 family members ----------
+## ---------- obstacle family members ----------
 
 familyG = function(k) {  # G_n, n = 6 + 2k
   U = paste0("U", 1:k); W = paste0("W", 1:k)

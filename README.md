@@ -15,7 +15,10 @@
 
 Code for the paper *Tournaments determined by three and five voters*
 (L. Chindelevitch and A. Harutyunyan). Every computational claim in the paper has a verifier here,
-organized by section, with a claim → tool manifest further down.
+organized by section, with a claim → tool manifest further down. Section 9 of the paper describes
+this package. Section and appendix numbers here follow the version submitted to *Mathematical Social
+Sciences*. The independent reproduction ([REPRODUCTION.md](REPRODUCTION.md) and the report) audited the
+earlier arXiv version, 2607.26690, whose Appendix A (the Paley(43) counts) is Appendix F of this one.
 
 ## Getting started
 
@@ -121,8 +124,8 @@ is the one committed input; every other table is regenerated.
 
 ## Manifest — claim → verifier
 
-Theorem 2.1 (§2, *every minimum FAS is a minimal 3-cycle hitting set*) is proved analytically (paper
-Appendix A) and needs no computation. Everything below does.
+Theorem 2.1 (§2, *every minimum FAS is a minimal 3-cycle hitting set*) and Lemma 2.2 (proved in the paper's
+Appendix A) are analytic and need no computation. Everything below does.
 
 ### §3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot (`sec3_mhp/`)
 
@@ -181,7 +184,7 @@ Proof write-up: [`PALEY43_NONREALIZABLE.md`](sec7_paley43/PALEY43_NONREALIZABLE.
 | B.4 — minimum set cover of obstacle classes | `minimum_set_cover.R` |
 | B.7 — enumerate all minimal obstacle supports | `gen_duals.R` |
 | E — MAS engine: weighted Held–Karp oracle (n ≤ 16) | `hk_oracle.c` |
-| G.2 — forced-arc reversal dichotomy | `reversal_check.c` |
+| G.4 — forced-arc reversal dichotomy | `reversal_check.c` |
 | G — obstacle figures (G₈, G₉ role-labelled) | `make_AB_obstacle_figures.R` |
 
 The infinite obstacle family (a forthcoming companion paper) is **not** included here.

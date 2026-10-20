@@ -16,8 +16,8 @@ generator (`make_AB_obstacle_figures.R`, G).
 - `k_realizability_lp.R` — predictability / realizability LP (α\* via primal, obstacle via edge duals) plus the n = 8/9 obstacle-family analysis (Appendix B.6, obstacle duals G.1); an Rcplex function library, not a self-running script.
 - `minimum_set_cover.R` — minimum set cover of obstacle classes by ILP (Appendix B.4); function library with a small built-in demo, also `source`d by `k_realizability_lp.R`.
 - `gen_duals.R` — builds triangle-packing dual certificates on Paley(43) for the budget-DP complement bound (manifest label B.7).
-- `reversal_check.c` — forced-arc reversal dichotomy scanner over `gentourng` bit-strings (Appendix G.2).
-- `make_AB_obstacle_figures.R` — draws the obstacle collections A′ (26) and B′ (25) as PDFs (Appendix G).
+- `reversal_check.c` — forced-arc reversal dichotomy scanner over `gentourng` bit-strings (Appendix G.4).
+- `make_AB_obstacle_figures.R` — draws the obstacle collections A′ (26) and B′ (25) as PDFs (Appendices G.1 and G.2).
 
 **Dependencies.** C (`cc -O3`) for `hk_oracle.c` and `reversal_check.c`; R for the four `.R`
 tools (`Rcplex`, plus `pracma`, `combinat`, `Matrix`, `slam`, `igraph` depending on the script).
@@ -58,7 +58,7 @@ Rscript gen_duals.R 100 duals.rds 4343             # needs Rcplex + cert_pool.R
 # NOTE: gen_duals.R does source("cert_pool.R") for paley_adj(); that file is NOT
 # present in this folder, so the script cannot run here as shipped.
 
-# --- Appendix G.2: forced-arc reversal dichotomy ---
+# --- Appendix G.4: forced-arc reversal dichotomy ---
 cc -O3 -o reversal_check reversal_check.c
 ./reversal_check 10 < hits.txt                      # n=10 gentourng bit-strings on stdin
 ./reversal_check 10 stats < hits.txt                # add the gained-3-cycles histogram
