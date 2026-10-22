@@ -12,8 +12,8 @@ $\alpha^{*} \ge 3/5$ density threshold is *necessary* for 5-realizability but, a
 sufficient**.
 
 *Every count referenced below is collected in **Appendix A**; the body is self-contained without it.
-The mathematics of §1–§6 is unconditional; the single computational input is the exhaustive screen of
-§6, whose result is stated in §7.*
+The mathematics of Section 1–Section 6 is unconditional; the single computational input is the exhaustive screen of
+Section 6, whose result is stated in Section 7.*
 
 **The idea in one paragraph.** A 5-realization would force two facts that collide. *(i) Counting.*
 $\mathrm{MAS}(\mathrm{Paley43}) = 543$ is barely above $3C/5 = 541.8$, so the two highest-agreement
@@ -25,7 +25,7 @@ disjoint. Together these say a realization needs two level-$\le 1$ orders whose 
 disjoint. We then check, exhaustively and with proof, that **no two level-$\le 1$ orders have disjoint
 double-back sets** — so no realization exists. The engineering (a "razor" that groups the level-$\le 1$
 orders into far fewer classes, and an automorphism reduction that shrinks one side by $|\mathrm{Aut}|$)
-only makes the exhaustive check finish in seconds; its soundness is proved in §6.
+only makes the exhaustive check finish in seconds; its soundness is proved in Section 6.
 
 ---
 
@@ -67,14 +67,14 @@ alive equator splits, sound in both directions on completion). The engine is val
 and reproduces known MAS values (Appendix A).
 
 **The density threshold is necessary but not sufficient (refuting Conjecture A).** From
-$\sum \mathrm{fwd} \ge 3C$ and $\mathrm{fwd} \le \mathrm{MAS}$ (§3) we get $5\,\mathrm{MAS} \ge 3C$, i.e.
+$\sum \mathrm{fwd} \ge 3C$ and $\mathrm{fwd} \le \mathrm{MAS}$ (Section 3) we get $5\,\mathrm{MAS} \ge 3C$, i.e.
 $\alpha^{*}(P) := \mathrm{MAS}/C \ge 3/5$ is a *necessary* condition for 5-realizability — any tournament
 with $\mathrm{MAS}/C < 3/5$ is automatically non-realizable (the "$\alpha^{*}$-obstruction"). Paley(43)
 *passes* this test: $5\,\mathrm{MAS} = 2715 = 3C + 6$, so $\alpha^{*}(43) = 181/301 > 3/5$, exceeding the
 threshold by $181/301 - 3/5 = 2/1505$. Yet it is non-realizable (this paper). Hence
 **$\alpha^{*} > 3/5$ does not imply 5-realizability**: the obstruction is a genuinely global fact,
 invisible to any single-parameter density bound. (The slack $5\,\mathrm{MAS} - 3C = 6$ is exactly what
-pins the two top voters to level $\lfloor 6/4 \rfloor = 1$ in §3 — the phenomenon is razor-tight.)
+pins the two top voters to level $\lfloor 6/4 \rfloor = 1$ in Section 3 — the phenomenon is razor-tight.)
 
 ---
 
@@ -108,13 +108,13 @@ $\blacksquare$
 The lemma is universal (it uses only "majority of $5$" and the $3$-cycle), so it holds for $P$.
 Consequently the five voters' double-back sets are **pairwise disjoint**:
 $\mathrm{DB}(O_i) \cap \mathrm{DB}(O_j) = \varnothing$ for $i \ne j$. In particular the **two top
-voters** (§3) are two orders at level $\le 1$ whose double-back sets are disjoint.
+voters** (Section 3) are two orders at level $\le 1$ whose double-back sets are disjoint.
 
 ---
 
 ## 5. Reduction to a finite check
 
-Combining §3–§4: *if $P$ is 5-realizable, there exist two distinct orders $O, O'$ at level $\le 1$ with
+Combining Section 3–Section 4: *if $P$ is 5-realizable, there exist two distinct orders $O, O'$ at level $\le 1$ with
 $\mathrm{DB}(O) \cap \mathrm{DB}(O') = \varnothing$.* Therefore:
 
 > **If no two level-$\le 1$ orders of $P$ have disjoint double-back sets, then $P$ is not
@@ -157,7 +157,7 @@ We compute all disjoint distinct-rmask pairs; only these are candidates for the 
 Let $G = \{\, \sigma_{a,b} : x \mapsto ax+b,\ a \in \mathrm{QR},\ b \in V \,\}$, with
 $|G| = q(q-1)/2 = 903$ — the group the engine canonicalises over and expands by (for the prime
 $q = 43$, $G$ is the full $\mathrm{Aut}(P)$). The shell is $G$-closed ($G$ preserves $\mathrm{fwd}$) and
-is the union of the reps' $G$-orbits (§5). The reduction rests on one lemma, **proved below**, not
+is the union of the reps' $G$-orbits (Section 5). The reduction rests on one lemma, **proved below**, not
 merely sampled.
 
 **Theorem (overlap size is $G$-invariant).** For every $\sigma \in G$ and all orders $O_1, O_2$,
@@ -207,7 +207,7 @@ Appendix A.
 
 Run on the complete level-$\le 1$ shell, the screen finds **no razor-disjoint pair whose full
 double-back sets are disjoint** ($\texttt{TRUE\_DISJOINT} = 0$; the full count table is Appendix A). By
-§3–§5 a 5-realization would produce exactly such a pair (its top two voters), so no 5-realization
+Section 3–Section 5 a 5-realization would produce exactly such a pair (its top two voters), so no 5-realization
 exists:
 
 > **$\mathrm{Paley}(43)$ is not 5-realizable; equivalently it is not the Kemeny median of any 5 voters.
@@ -226,7 +226,7 @@ reps with census check → the screen). Peak $\le 8$ threads, $\approx 5$ GB RAM
 ## Appendix A — Counts and computational results
 
 Everything numerical is gathered here; the body's argument does not depend on any specific value below
-except $\mathrm{MAS}=543$ (§2) and the derived thresholds.
+except $\mathrm{MAS}=543$ (Section 2) and the derived thresholds.
 
 **A.1 Structural constants (all closed-form in $q=43$).**
 
@@ -272,7 +272,7 @@ stabiliser-free, none missed).
 - **$\mathrm{MAS}=543$** certified by `dp43` (two independent rebuilds); MAS gauntlet reproduces
   brute-force $q=7,11$ and the known $\mathrm{MAS}=107/161/285$ for $q=19/23/31$ byte-identically.
 - **Shell completeness**: the identity in A.2.
-- **$G$-invariance of DB-overlap size** (the sole property the reduction uses): **proved** (§6.2), and
+- **$G$-invariance of DB-overlap size** (the sole property the reduction uses): **proved** (Section 6.2), and
   additionally cross-checked **exhaustively over all $903$ $\sigma$** — hence over every triangle
   orbit. $G$ acts on the $3311$ cyclic triangles with $5$ orbits of sizes $903,903,903,301,301$; the
   two size-$301$ orbits are the $602$ triangles with a nontrivial (order-$3$) stabiliser.

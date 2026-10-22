@@ -9,14 +9,14 @@ and the completeness identity):
 ```
 slices: 256, all present and internally consistent
 total tournaments:             903,753,248   (= D_11, completeness check PASSED)
-  margin-1 3-inducible:        362,587,120
-  3-inducible, not margin-1:    20,038,128
+  unit-margin 3-inducible:        362,587,120
+  3-inducible, not unit-margin:    20,038,128
   not 3-inducible:             521,128,000
-    margin-1 5-inducible:      521,128,000   (all witnesses independently verified)
+    unit-margin 5-inducible:      521,128,000   (all witnesses independently verified)
     residual (need ILP):                 0
 ```
 
-Every non-3-inducible tournament admits a **margin-1** five-voter profile
+Every non-3-inducible tournament admits a **unit-margin** five-voter profile
 (witness found by `cert_m1k5`, re-checked by the independent `verify_m1k5`:
 five acyclic voters, every arc backed exactly 3:2). The ILP fallback was never
 invoked. Empirical corollary: all non-3-inducible tournaments on n ≤ 11

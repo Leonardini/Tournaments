@@ -1,4 +1,4 @@
-# §5 — The A(3) threshold fails on the boundary (cA3)  (`sec5_a3_boundary/`)
+# Section 5 — The A(3) threshold fails on the boundary (cA3)  (`sec5_a3_boundary/`)
 
 **What it does.** Conjecture A(k) predicts that a tournament is *k*-inducible (the majority of some *k* voters) exactly when its predictability α\* reaches the threshold (k+1)/(2k). This folder shows the k = 3 threshold α\* = 2/3 is **not** sufficient: it exhibits and certifies **cA3** — the code's **`ce1068`**, the Z₁₁ circulant tournament with connection set {1, 2, 3, 4, 6} (`allGraphs[[1068]]`) — which has exactly α\* = 2/3 yet is **not** 3-inducible (it needs 5 voters). It then isolates cA3 inside the regular n = 11 census and the full n = 10 census, and records the companion object cA6 (which needs 9 voters), plus the two boundary figures.
 
@@ -126,7 +126,7 @@ Rscript make_reversal_cex_figs.R                  # -> ReversalCEX_{A,B,C,D}.pdf
 
 ---
 
-# Non-margin-1 obstacle census (exact-coverage predictability α⁼)  — `enumerate_nm1_supports.R` et al.
+# Non-unit-margin obstacle census (exact-coverage predictability α⁼)  — `enumerate_nm1_supports.R` et al.
 
 **What it does.** For the **254** tournaments on `n = 9` that are 3-inducible **but not with margin 1**
 (Appendix G.2), it produces the *complete* obstacle census, certifies every obstacle's

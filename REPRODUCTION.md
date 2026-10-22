@@ -2,7 +2,7 @@
 
 [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/Leonardini/Tournaments/blob/main/paley43_five_voters.py)
 
-**Claim tested.** The paper's headline computational result (§7): the Paley tournament on 43
+**Claim tested.** The paper's headline computational result (Section 7): the Paley tournament on 43
 vertices is *not* 5-realizable — it is the Kemeny median of no five linear orders — hence
 **N(5) ≤ 43**. Equivalently, α\* > 3/5 does **not** imply 5-inducibility, refuting Conjecture A.
 

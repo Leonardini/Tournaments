@@ -1,4 +1,4 @@
-# §3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot  (`sec3_mhp/`)
+# Section 3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot  (`sec3_mhp/`)
 
 **What it does.** Reproduces the paper's Counterexamples 3.1 (m = 7 and m = 9 voters) and
 3.2 (m = 5 voters, n = 6 candidates), which refute Conjecture 1 of Milosz–Hamel–Pierrot by
@@ -32,7 +32,7 @@ Rscript make_family_and_mhp_figs.R
   rendering of seven small PDFs, two using a force-directed `layout_with_kk`). It writes seven
   PDFs to the working directory: `ObstacleG8.pdf`, `ObstacleH9.pdf`, `ObstacleG10.pdf`,
   `ObstacleH11.pdf` (obstacle family), and `MHP_Fig1a.pdf`, `MHP_Fig1b.pdf`, `MHP_Fig2.pdf`
-  (the §3 counterexamples). Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
+  (the Section 3 counterexamples). Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
   The counterexample self-checks print, for the two Figure-1 panels,
   `MHP_Fig1a.pdf : min-weight FAS value <v> | optimal sets: 2` and
   `MHP_Fig1b.pdf : min-weight FAS value <v> | optimal sets: 1`, and for Figure 2

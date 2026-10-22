@@ -1,4 +1,4 @@
-# §6 — Improved bounds on N(k)  (`sec6_bounds/`)
+# Section 6 — Improved bounds on N(k)  (`sec6_bounds/`)
 
 **What it does.** Brackets N(5), the number of voters needed to realize every
 tournament as a majority. The lower bound comes from an **exhaustive n = 11
@@ -22,10 +22,10 @@ streamed through the three CSP tools), `n11_aggregate.sh` (per-slice consistency
 + completeness check against D₁₁), `n11_census.slurm` (SLURM array fallback).
 
 ### `triple_local_csp/` — the CSP engines (C)
-- `margin1_scan.c` — triple-local CSP deciding margin-1 3-realizability (3
+- `margin1_scan.c` — triple-local CSP deciding unit-margin 3-realizability (3
   labels) and full 3-realizability (4 labels), per gentourng bitstring; ~20 µs/
   tournament (Appendix G.3). Emits `R`/`N` lines for the downstream stages.
-- `cert_m1k5.c` — margin-1 five-voter CSP over the 10 dissent pairs; SAT ⇒
+- `cert_m1k5.c` — unit-margin five-voter CSP over the 10 dissent pairs; SAT ⇒
   5-inducible with every arc backed exactly 3:2, and emits the full arc-labelling
   as a witness.
 - `verify_m1k5.c` — independent verifier: rebuilds the five voters from each
@@ -87,7 +87,7 @@ cc -O3 -o verify_m1k5  triple_local_csp/verify_m1k5.c
 # stage 2 alone: 3-inducibility scan over all n = 9 tournaments
 gentourng -q 9 | ./margin1_scan 9 emitn > /dev/null
 
-# full margin-1 five-voter pipeline (the census wiring, one process)
+# full unit-margin five-voter pipeline (the census wiring, one process)
 gentourng -q 9 | ./margin1_scan 9 emitn | grep '^N ' | cut -d' ' -f2 \
   | ./cert_m1k5 9 | ./verify_m1k5 9 > /dev/null
 ```

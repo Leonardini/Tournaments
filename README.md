@@ -1,5 +1,5 @@
 > **Independent reproduction (2026-07-30).** Every computational claim in this package was
-> re-run on a single laptop, including the §7 keystone end to end: the q=43 layer tables rebuilt
+> re-run on a single laptop, including the Section 7 keystone end to end: the q=43 layer tables rebuilt
 > from scratch, `MAS(Paley43) = 543` certified both ways, the level-≤1 shell enumerated and
 > census-verified at 1,841,303 orbits, and `TRUE_DISJOINT = 0` over all 4,376,325,129 pairs —
 > every published count exact. See **[REPRODUCTION.md](REPRODUCTION.md)** for the claim-by-claim
@@ -7,7 +7,7 @@
 > for the illustrated write-up, and **[paley43_five_voters.py](paley43_five_voters.py)** for a
 > tutorial notebook.
 >
-> *Note for anyone rebuilding §7 on a machine with under ~32 GB of RAM:* run
+> *Note for anyone rebuilding Section 7 on a machine with under ~32 GB of RAM:* run
 > `CHUNKMB=2 ./reproduce_paley43.sh`. The default chunk size puts ~6.4 GB into buffers and peaks
 > near 26 GB at layer 20; `CHUNKMB=2` completed the same layers at ~9 GB.
 
@@ -41,7 +41,7 @@ Two ways in:
   "check the result" step for every section and reports PASS / FAIL. Free tools only: no HPC, no
   downloads, no CPLEX.
 - **Reproduce the keystone end-to-end** — the headline result (Paley(43) is not the majority of five
-  voters, §7 ⇒ **N(5) ≤ 43**) rebuilds from one script:
+  voters, Section 7 ⇒ **N(5) ≤ 43**) rebuilds from one script:
   `cd sec7_paley43 && ./reproduce_paley43.sh` (details under *Quick start* below).
 
 The package is **source-only** (≈ 2.5 MB). Large data — McKay's tournament catalogues, the Paley(43)
@@ -67,7 +67,7 @@ Optional, and only for specific extras — `./check_all.sh` needs none of them:
   pre-filter (`brew install glpk` / `apt-get install libglpk-dev`).
 - [nauty](https://pallini.di.uniroma1.it/) `gentourng` — the n = 11 census and whole-catalogue scans
   (`brew install nauty` / `apt-get install nauty`; the upstream tarball is also fine).
-- [lrs](http://cgm.cs.mcgill.ca/~avis/C/lrs.html) — the non-margin-1 obstacle enumerator
+- [lrs](http://cgm.cs.mcgill.ca/~avis/C/lrs.html) — the non-unit-margin obstacle enumerator
   (`brew install lrslib` / `apt-get install lrslib`).
 - The R extras `combinat`, `slam`, `Matrix`, `pracma`, `tidyverse` … cover incidental helpers in
   `appendices/`: `Rscript install_r_packages.R --all`.
@@ -85,8 +85,8 @@ handful of CPLEX scripts.
 
 ### CPLEX (optional)
 
-**No headline result needs it.** Paley(43) (§7), the N(5) ≥ 12 census (§6), FAS = HS₃ (§4), and cA3's
-non-3-inducibility (§5) all run with just a C compiler and/or free solvers (OR-Tools CP-SAT, PuLP-CBC,
+**No headline result needs it.** Paley(43) (Section 7), the N(5) ≥ 12 census (Section 6), FAS = HS₃ (Section 4), and cA3's
+non-3-inducibility (Section 5) all run with just a C compiler and/or free solvers (OR-Tools CP-SAT, PuLP-CBC,
 `lpSolve`, GLPK). Only these eight scripts use IBM CPLEX 22.1 — and the reproducibility ones each have
 a free twin:
 
@@ -106,7 +106,7 @@ the [IBM Academic Initiative](https://www.ibm.com/academic)), then add the bindi
 - **R:** `install.packages("Rcplex", configure.args="--with-cplex-dir=<cplex-studio>/cplex")`;
   `cplexAPI` (CRAN archive) builds the same way.
 
-## Quick start — the Paley(43) result (§7)
+## Quick start — the Paley(43) result (Section 7)
 
 ```sh
 cd sec7_paley43 && ./reproduce_paley43.sh
@@ -124,16 +124,16 @@ is the one committed input; every other table is regenerated.
 
 ## Manifest — claim → verifier
 
-Theorem 2.1 (§2, *every minimum FAS is a minimal 3-cycle hitting set*) and Lemma 2.2 (proved in the paper's
+Theorem 2.1 (Section 2, *every minimum FAS is a minimal 3-cycle hitting set*) and Lemma 2.2 (proved in the paper's
 Appendix A) are analytic and need no computation. Everything below does.
 
-### §3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot (`sec3_mhp/`)
+### Section 3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot (`sec3_mhp/`)
 
 | claim | tool |
 |---|---|
 | Counterexamples 3.1 (m = 7, 9) and 3.2 (m = 5, n = 6): FAS > HS₃, with the minimum-weight FAS found by brute force and the margins verified | `make_family_and_mhp_figs.R` — self-checking; **stops on any mismatch** before plotting |
 
-### §4 — Conjecture 2: FAS = HS₃ on 3-inducible tournaments (`sec4_fas_hs3/`)
+### Section 4 — Conjecture 2: FAS = HS₃ on 3-inducible tournaments (`sec4_fas_hs3/`)
 
 | claim | tool |
 |---|---|
@@ -141,7 +141,7 @@ Appendix A) are analytic and need no computation. Everything below does.
 | Counterexample 4.2: regular T\* on 11 vertices with FAS = 17 > 16 = HS₃ | `make_tstar_figs.R` — self-checks FAS = 17 and HS₃ = 16 (lpSolve) |
 | The six 3-inducible self-converse violators (Figure 4) | `make_conj2_cex_figs.R` — re-checks self-converse and HS₃ < FAS |
 
-### §5 — The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
+### Section 5 — The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
 
 cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3, 4, 6}.
 
@@ -156,7 +156,7 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | cA6 (needs **9** voters); the 6-vs-9-voter dichotomy | `cert9.c` |
 | forced-arc reversal counterexamples at n = 10 (Figure 8) | `make_reversal_cex_figs.R` |
 
-### §6 — Improved bounds on N(k) (`sec6_bounds/`)
+### Section 6 — Improved bounds on N(k) (`sec6_bounds/`)
 
 | claim | tool |
 |---|---|
@@ -165,7 +165,7 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | triple-local CSP — 3-inducibility as a vertex-triple labelling (~20 µs/tournament; Appendix G.3) | `triple_local_csp/margin1_scan.c` |
 | Proposition 6.1 completion-uniqueness ⇒ N(5) ≤ 39 (regular), ≤ 38 (near-regular) | `counting_bounds/extended_table1_bounds.py`, `counting_bounds/nearreg_table_bounds.py` |
 
-### §7 — Paley(43) is not the majority of five voters (`sec7_paley43/`)
+### Section 7 — Paley(43) is not the majority of five voters (`sec7_paley43/`)
 
 Run it via *Quick start* above. The pieces:
 
@@ -214,11 +214,11 @@ Brendan McKay's digraph archive, <https://users.cecs.anu.edu.au/~bdm/data/digrap
 ## Layout
 
 ```
-sec3_mhp/          §3  MHP Conjecture 1 counterexamples
-sec4_fas_hs3/      §4  Conjecture 2 (FAS = HS₃): n ≤ 10 census + T*
-sec5_a3_boundary/  §5  A(3) threshold on the boundary: cA3, censuses, cA6
-sec6_bounds/       §6  bounds on N(k): n = 11 census, ILP, counting
-sec7_paley43/      §7  Paley(43), end-to-end from one script
+sec3_mhp/          Section 3  MHP Conjecture 1 counterexamples
+sec4_fas_hs3/      Section 4  Conjecture 2 (FAS = HS₃): n ≤ 10 census + T*
+sec5_a3_boundary/  Section 5  A(3) threshold on the boundary: cA3, censuses, cA6
+sec6_bounds/       Section 6  bounds on N(k): n = 11 census, ILP, counting
+sec7_paley43/      Section 7  Paley(43), end-to-end from one script
 appendices/        shared engines + appendix-specific tools (B, E, G)
 common/  data/     shared α* oracle and progress helper; the few committed data inputs
 

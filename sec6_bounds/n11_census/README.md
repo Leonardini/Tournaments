@@ -13,7 +13,7 @@ so we run it ourselves. Proposed by Leonid, built 2026-07-22.
    tree, so slice totals summing to D_11 is the completeness identity.
 2. `margin1_scan 11 emitn` (triple-local 4-label CSP, ~34 us/tournament):
    3-inducible => 5-inducible, done. ~49.9% survive to stage 3.
-3. `cert_m1k5 11` (margin-1 five-voter CSP over the 10 dissent pairs,
+3. `cert_m1k5 11` (unit-margin five-voter CSP over the 10 dissent pairs,
    ~276 us/instance): SAT => 5-inducible with every arc 3:2; emits the full
    labeling as a witness.
 4. `verify_m1k5 11` (independent verifier, this campaign): rebuilds the five
@@ -25,11 +25,11 @@ so we run it ourselves. Proposed by Leonid, built 2026-07-22.
 ## Validation (known-answer, before the full run)
 
 - n = 9: stage 2 reproduces 173,608 / 254 / 17,674 exactly (Appendix I);
-  all 17,674 non-3-inducibles are margin-1-5-SAT, all witnesses verified.
+  all 17,674 non-3-inducibles are unit-margin 5-SAT, all witnesses verified.
 - n = 10: stage 2 reproduces 6,812,906 / 89,686 / 2,830,464 exactly
   (manuscript Table 9 row); stage-3 run over the 2,830,464 in progress.
 - n = 11 slice 137/4096 (246,829 tournaments): 118,463 / 5,119 / 123,247;
-  all 123,247 margin-1-5-SAT, all verified, residual 0.
+  all 123,247 unit-margin 5-SAT, all verified, residual 0.
 
 ## Running
 
@@ -49,6 +49,6 @@ totals sum to exactly D_11 = 903,753,248.
 
 ## Sources
 
-`margin1_scan.c`, `cert_m1k5.c` live in `Paley23Decide/` (manuscript §G.3 /
+`margin1_scan.c`, `cert_m1k5.c` live in `Paley23Decide/` (manuscript Section G.3 /
 the A(3) campaign); `verify_m1k5.c` is new (this directory's `bin/` holds ARM
 builds of all three).

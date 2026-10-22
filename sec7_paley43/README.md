@@ -1,4 +1,4 @@
-# §7 — Paley(43) is not the majority of five voters  (`sec7_paley43/`)
+# Section 7 — Paley(43) is not the majority of five voters  (`sec7_paley43/`)
 
 **What it does.** Proves the keystone result of the paper — **N(5) ≤ 43**: the Paley tournament
 Paley(43) is *not* 5-realizable (it is the Kemeny median of no multiset of five linear orders) —

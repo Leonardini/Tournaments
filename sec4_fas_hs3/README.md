@@ -1,6 +1,6 @@
-# §4 — Conjecture 2: FAS = HS₃ on 3-inducible tournaments  (`sec4_fas_hs3/`)
+# Section 4 — Conjecture 2: FAS = HS₃ on 3-inducible tournaments  (`sec4_fas_hs3/`)
 
-**What it does.** Backs the §4 claims about when the minimum feedback arc set (FAS)
+**What it does.** Backs the Section 4 claims about when the minimum feedback arc set (FAS)
 equals the minimum 3-cycle hitting set (HS₃). `hs3fas.c` establishes **Theorem 4.1**
 by exhaustively checking, over a McKay tournament catalogue, that FAS = HS₃ for every
 tournament on n ≤ 10 vertices (FAS via an exact Held–Karp maximum-acyclic-subgraph DP,
