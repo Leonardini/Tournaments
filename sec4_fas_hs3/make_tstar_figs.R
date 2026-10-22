@@ -11,8 +11,8 @@ library(lpSolve)
 # outputs are written to the working directory -- run this script from its own folder
 
 voters = list(c(4, 5, 6, 11, 8, 9, 10, 2, 7, 1, 3),
-              c(9, 1, 2, 3, 7, 5, 6, 4, 11, 10, 8),
-              c(10, 8, 3, 7, 11, 1, 2, 6, 4, 5, 9))
+              c(10, 8, 9, 1, 2, 3, 7, 5, 6, 4, 11),
+              c(3, 7, 11, 1, 2, 6, 4, 5, 9, 10, 8))
 n = 11
 L = matrix(0, n, n)
 for (v in voters) for (a in 1:(n - 1)) for (b in (a + 1):n) {
