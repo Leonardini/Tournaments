@@ -31,6 +31,25 @@ streamed through the three CSP tools), `n11_aggregate.sh` (per-slice consistency
 - `verify_m1k5.c` — independent verifier: rebuilds the five voters from each
   witness, checks every backward set is acyclic and re-counts every arc at
   exactly 3:2; aborts on any failure, passes UNSAT lines through.
+- `m1k5_profile.c` — writes a `cert_m1k5` witness out as five explicit linear
+  orders (used by `unit_margin_witnesses/`); stops on any tournament without one.
+
+### `unit_margin_witnesses/` — explicit unit-margin profiles for n = 8, 9, 10
+Every non-3-inducible tournament on 8, 9 and 10 vertices (96, 17,674 and
+2,830,464 of them) with five linear orders whose majority is the tournament and
+which carry every arc exactly 3 votes to 2, so each lies in I₅,₁.
+- `n8_unit_margin_profiles.txt.xz`, `n9_…` — the witnesses for n = 8 and 9. Line k
+  holds five orders (vertices `0`–`9` from top to bottom) for the k-th
+  non-3-inducible tournament of McKay's catalogue `data/mckay/tournamentsN.txt`,
+  in catalogue order. The n = 10 file (40 MB) is not shipped:
+  `./make_witnesses.sh 10 ../../data/mckay/tournaments10.txt 4` regenerates it in about 6 minutes.
+- `make_witnesses.sh` — regenerates a file: McKay catalogue → `margin1_scan`
+  (keeps the non-3-inducible) → `cert_m1k5` → `m1k5_profile`; stops if any
+  tournament has no unit-margin profile.
+- `verify_unit_margin.py` — independent check (Python standard library, no
+  code shared with the search): every order is a permutation, every pair is
+  split exactly 3:2, the majority equals the listed tournament vertex for
+  vertex, and the number of lines equals the expected count.
 
 ### `ilp10/` — the n ≤ 10 ILP cross-check (R, CPLEX)
 - `solve_ilp10.R` — per-worker 5-realizability sweep of the n = 10 catalogue: a
@@ -63,6 +82,9 @@ Versions and installation are in the [top-level README](../README.md#environment
   solver: the census is **CPLEX-free**.
 - **`triple_local_csp/`** — C compiler (`cc -O3`); nauty `gentourng` to feed
   bitstrings for whole-catalogue runs. No external libraries.
+- **`unit_margin_witnesses/`** — Python 3 (standard library) for the check;
+  a C compiler for `margin1_scan`, which lists the non-3-inducible tournaments
+  of McKay's catalogues (`./get_data.sh` for n = 8, 9; `./get_data.sh n10`).
 - **`ilp10/`** — R with the shared `ilp_realizability.R` engine and **`cplexAPI`
   (IBM CPLEX 22.1)**. The **only CPLEX scripts in this section** are
   `ilp10/solve_ilp10.R` and `ilp10/ilp10_aggregate.R`; the headline n = 11
@@ -90,6 +112,20 @@ gentourng -q 9 | ./margin1_scan 9 emitn > /dev/null
 # full unit-margin five-voter pipeline (the census wiring, one process)
 gentourng -q 9 | ./margin1_scan 9 emitn | grep '^N ' | cut -d' ' -f2 \
   | ./cert_m1k5 9 | ./verify_m1k5 9 > /dev/null
+```
+
+**`unit_margin_witnesses/`** (check the committed witnesses against McKay's
+catalogues; `margin1_scan` built as above):
+```sh
+for n in 8 9 10; do
+  expect=$(case $n in 8) echo 96;; 9) echo 17674;; 10) echo 2830464;; esac)
+  ./margin1_scan $n emitn < ../data/mckay/tournaments$n.txt | grep '^N ' | cut -d' ' -f2 \
+    | python3 unit_margin_witnesses/verify_unit_margin.py $n \
+        unit_margin_witnesses/n${n}_unit_margin_profiles.txt.xz - --expect $expect
+done
+
+# regenerate a witness file (3 parallel pieces; output does not depend on the number)
+unit_margin_witnesses/make_witnesses.sh 10 ../data/mckay/tournaments10.txt 3
 ```
 
 **`ilp10/`** (CPLEX; run from a dir holding `ilp_realizability.R`; HPC-scale — a
@@ -137,6 +173,17 @@ bash n11_census/n11_aggregate.sh $WORK/n11_census 64
   <line>` on any bad witness. (At n = 9 the known answer is total 191,536 /
   margin1-SAT 173,608 / not-margin1 254 / non-realizable 17,674, all 5-SAT and
   verified.)
+
+- **`unit_margin_witnesses/`** — the check takes under a second at n = 8 and
+  9 and about 3 minutes at n = 10 (one core for `margin1_scan`, one for the
+  verifier; measured on an Apple M-series laptop), printing for instance
+  `n=10: verified 2,830,464 unit-margin five-voter profiles; every majority is
+  its listed tournament and every arc is carried exactly 3:2`, or stopping with
+  `VERIFY FAIL at line <k> (<reason>)`. `make_witnesses.sh` at n = 10 takes
+  about 6 minutes on 3 pieces (each runs `margin1_scan` and `cert_m1k5` side by
+  side) and prints the census line `n=10: 9733056 tournaments; 3-inducible with
+  unit margin 6812906, 3-inducible only with a unanimous arc 89686, not
+  3-inducible 2830464`.
 
 - **`ilp10/`** — an HPC-scale batch (200 workers over the 9.7M-tournament n = 10
   catalogue); wall-clock depends on the cluster. The 3-ILP settles the vast

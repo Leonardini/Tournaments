@@ -14,6 +14,7 @@ hk_oracle
 margin1_scan
 cert_m1k5
 verify_m1k5
+m1k5_profile
 cert9
 alpha_fast
 enum_profiles
@@ -43,3 +44,4 @@ results/
 
 # OS / editor
 .DS_Store
+sec6_bounds/unit_margin_witnesses/n10_unit_margin_profiles.txt.xz
