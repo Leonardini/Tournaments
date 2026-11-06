@@ -8,8 +8,8 @@ that returns α\* together with the edge-dual "obstacle" it certifies (`k_realiz
 B.6 / obstacle duals), the minimum set cover of obstacle classes (`minimum_set_cover.R`, B.4),
 and a diverse family of triangle-packing dual certificates on Paley(43) for the budget-DP
 complement bound (`gen_duals.R`, listed under B.7). Appendix G is served by the forced-arc
-reversal-dichotomy scanner (`reversal_check.c`, G.2) and the obstacle-collection figure
-generator (`make_AB_obstacle_figures.R`, G).
+reversal-dichotomy scanner (`reversal_check.c`, G.2) and by the obstacle catalogue at n = 9
+(`obstacle_catalogue/`, with its own README).
 
 **Files.**
 - `hk_oracle.c` — weighted Held–Karp MAS oracle for n ≤ 16 (Appendix E); **include, not standalone** (defines `hk_best(...)`, has no `main`).
@@ -17,7 +17,6 @@ generator (`make_AB_obstacle_figures.R`, G).
 - `minimum_set_cover.R` — minimum set cover of obstacle classes by ILP (Appendix B.4); function library with a small built-in demo, also `source`d by `k_realizability_lp.R`.
 - `gen_duals.R` — builds triangle-packing dual certificates on Paley(43) for the budget-DP complement bound (manifest label B.7).
 - `reversal_check.c` — forced-arc reversal dichotomy scanner over `gentourng` bit-strings (Appendix G.4).
-- `make_AB_obstacle_figures.R` — draws the obstacle collections A′ (26) and B′ (25) as PDFs (Appendices G.1 and G.2).
 
 **Dependencies.** C (`cc -O3`) for `hk_oracle.c` and `reversal_check.c`; R for the four `.R`
 tools (`Rcplex`, plus `pracma`, `combinat`, `Matrix`, `slam`, `igraph` depending on the script).
@@ -62,9 +61,6 @@ Rscript gen_duals.R 100 duals.rds 4343             # needs Rcplex + cert_pool.R
 cc -O3 -o reversal_check reversal_check.c
 ./reversal_check 10 < hits.txt                      # n=10 gentourng bit-strings on stdin
 ./reversal_check 10 stats < hits.txt                # add the gained-3-cycles histogram
-
-# --- Appendix G: obstacle figures (run from the repo root per the script) ---
-Rscript make_AB_obstacle_figures.R                  # reads Counterexamples/Non3RealisabilitySummary.RData
 ```
 
 **What to expect.**
@@ -109,12 +105,3 @@ Rscript make_AB_obstacle_figures.R                  # reads Counterexamples/Non3
   `  g=<g>: <kills> / <survives>`. *Approximate:* runtime scales with the number of input
   tournaments times m per-tournament 4-label CSP solves (plus one reversal solve per forced arc);
   no committed timing here.
-
-- **`make_AB_obstacle_figures.R`** — asserts `length(Aprime) == 26` and `length(Bprime) == 25`,
-  writes `Manuscript/figures/A_prime_01.pdf`…`A_prime_26.pdf`,
-  `B_prime_01.pdf`…`B_prime_25.pdf`, and the grids `collectionA_prime.pdf`,
-  `collectionB_prime.pdf`, then prints
-  `Done: 26 A' + 25 B' figures + 2 grids in Manuscript/figures/`. *Approximate:* seconds to a
-  minute (igraph `layout_with_kk` on ~50 small graphs). It requires
-  `Counterexamples/Non3RealisabilitySummary.RData` (produced by `k_realizability_lp.R`'s
-  `main()`) and an existing `Manuscript/figures/` directory — neither is in this folder.

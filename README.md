@@ -186,9 +186,9 @@ Proof write-up: [`PALEY43_NONREALIZABLE.md`](sec7_paley43/PALEY43_NONREALIZABLE.
 | B.4 — minimum set cover of obstacle classes | `minimum_set_cover.R` |
 | B.7 — triangle-packing dual certificates on Paley(43) | `gen_duals.R` |
 | The catalogue of minimal obstacles at n = 9 (all minimal supports, exactly; α\* of all 17,674) | `obstacle_catalogue/` (its own README) |
+| The figure of G₈ and G₉ (G₉ is class `O02` of the catalogue; each checked to be Eulerian with 3n − 4 arcs before drawing) | `../sec3_mhp/make_family_and_mhp_figs.R` |
 | E — MAS engine: weighted Held–Karp oracle (n ≤ 16) | `hk_oracle.c` |
 | G.4 — forced-arc reversal dichotomy | `reversal_check.c` |
-| G — obstacle figures (G₈, G₉ role-labelled) | `make_AB_obstacle_figures.R` |
 
 The infinite obstacle family (a forthcoming companion paper) is **not** included here.
 
