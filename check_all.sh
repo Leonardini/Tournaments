@@ -109,10 +109,6 @@ check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "
       "cd sec5_a3_boundary && Rscript verify_ce1068.R; rm -f ce1068_inmask.txt"
 check "sec5: cA3 not-3-real / 5-real (CP-SAT)" "k=3 (maj>=2): INFEASIBLE (proven)" "python py_ortools" \
       "cd sec5_a3_boundary && python3 independent_realize3_cpsat.py"
-check "sec5: 47/47 obstacle certs (gmp-only)"  "STATIC (gmp-only) certification: 47/47 obstacles" "R r_gmp" \
-      "cd sec5_a3_boundary && Rscript verify_obstacle_certs.R n9_obstacle_certs.rds"
-check "sec5: 72/72 non-margin-1 certs (gmp)"   "STATIC (gmp-only) certification: 72/72 non-margin-1 obstacles" "R r_gmp" \
-      "cd sec5_a3_boundary && Rscript verify_nm1_obstacle_certs.R n9_nm1_obstacle_certs.rds"
 
 echo "${C}== sec6_bounds (bounds on N(k)) ==${Z}"
 check "sec6: counting bounds table (asserts)"  EXIT0 "python" \
@@ -133,6 +129,8 @@ check "sec7: CP-SAT realizability gauntlet"    "GAUNTLET: PASS"       "python py
       "cd sec7_paley43 && python3 realize5_cpsat.py --gauntlet"
 
 echo "${C}== appendices (obstacle-dual / LP tools) ==${Z}"
+check "n = 9 obstacles: 59 + 51 classes (exact)" "n9_signed_obstacles_254.tsv: 51/51 classes certified exactly" "python" \
+      "cd appendices/obstacle_catalogue && python3 verify_catalogue.py"
 check "appendices: min-set-cover ILP demo"     "Total elements covered: 5/5" "R cplex_r" \
       "cd appendices && Rscript minimum_set_cover.R"
 

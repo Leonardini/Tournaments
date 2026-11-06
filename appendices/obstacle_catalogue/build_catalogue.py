@@ -6,7 +6,8 @@ g8set_16620.txt) and face254_*.jsonl (face_signed.py on margin1_254.txt).
 
 An obstacle class is an isomorphism class of minimal supports carrying their (unique) optimal dual, as a
 multidigraph: arc u -> v with multiplicity m, the dual weight of an arc being its multiplicity divided by
-the total. For the signed duals of the 254, a negative multiplicity marks a flipped arc.
+the total. For the signed duals of the 254, a negative multiplicity marks an arc with negative weight, and
+the weight is the multiplicity divided by sum_mult, the signed sum (total_mult is the sum of absolute values).
 
 Numbering: the classes met among the 1,054 tournaments without G8 are O01, O02, ... in order of alpha*,
 then number of arcs, then decreasing number of tournaments, then the first tournament (in input order)
@@ -110,7 +111,7 @@ def describe(c):
     assert all(bal[v] == 0 for v in verts), "an obstacle that is not Eulerian"
     rk = canon([(v, u) for u, v in arcs], m)
     return dict(alpha=str(c["alpha"]), arcs=len(arcs), verts=len(verts), max_mult=max(abs(x) for x in m),
-                total_mult=sum(abs(x) for x in m), negative_arcs=sum(x < 0 for x in m),
+                total_mult=sum(abs(x) for x in m), sum_mult=sum(m), negative_arcs=sum(x < 0 for x in m),
                 n_supports=c["n_supports"], n_tournaments=len(c["tour"]),
                 degseq=",".join(f"{outd[v]}/{ind[v]}" for v in sorted(verts, key=lambda v: (outd[v], ind[v]))),
                 arclist=";".join(f"{u}>{v}:{x}" for (u, v), x in zip(arcs, m))), rk
@@ -183,7 +184,7 @@ def main():
         d, rk = describe(c254[k])
         d.update(id=ids[k], converse=ids.get(rk, "-"))
         rows.append(d)
-    cols = ["id", "alpha", "arcs", "verts", "negative_arcs", "max_mult", "total_mult", "n_supports",
+    cols = ["id", "alpha", "arcs", "verts", "negative_arcs", "max_mult", "total_mult", "sum_mult", "n_supports",
             "n_tournaments", "converse", "degseq", "arclist"]
     write("n9_signed_obstacles_254.tsv", rows, cols)
     print(f"254: {sum(len(r['supports']) for r in r254)} minimal signed supports, {len(c254)} classes; "

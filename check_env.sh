@@ -63,7 +63,7 @@ record R      "$([ -n "$R_V"  ] && echo 1 || echo 0)" "$R_V"           "R"      
 
 # ---- Python packages -----------------------------------------------------------------
 # name:import-path — one interpreter start for all of them.
-PY_PROBE="ortools:ortools.sat.python.cp_model pulp:pulp matplotlib:matplotlib marimo:marimo cplex:cplex"
+PY_PROBE="ortools:ortools.sat.python.cp_model pulp:pulp matplotlib:matplotlib marimo:marimo cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
 PY_OUT=""
 if [ -n "$PY_V" ]; then
   PY_OUT=$(python3 - $PY_PROBE 2>/dev/null <<'PYEOF'
@@ -90,6 +90,10 @@ v=$(pyver ortools);    record py_ortools    "$([ "$v" != - ] && echo 1 || echo 0
 v=$(pyver pulp);       record py_pulp       "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "pulp"       "CBC: sec5 orbit certificate" 1
 v=$(pyver matplotlib); record py_matplotlib "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "matplotlib" "optional: repro/figures/" 0
 v=$(pyver marimo);     record py_marimo     "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "marimo"     "optional: paley43_five_voters.py notebook" 0
+for pk in numpy pycddlib igraph networkx; do
+  lab=$pk; [ "$pk" = igraph ] && lab=python-igraph
+  v=$(pyver $pk); record py_$pk "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "$lab" "optional: regenerating appendices/obstacle_catalogue  [uv sync --extra obstacles; pycddlib needs cddlib + GMP]" 0
+done
 
 # ---- R packages ----------------------------------------------------------------------
 # Core four are really loaded (a package that will not load is worse than one absent);
@@ -139,15 +143,12 @@ if [ -n "$CC_V" ]; then
 fi
 GENT=""; for g in gentourng nauty-gentourng; do command -v "$g" >/dev/null 2>&1 && GENT=$(command -v "$g") && break; done
 [ -z "$GENT" ] && [ -n "${GENTOURNG:-}" ] && [ -x "${GENTOURNG}" ] && GENT="$GENTOURNG"
-LRS=""; command -v lrs >/dev/null 2>&1 && LRS=$(command -v lrs)
 
 section "Optional external tools  ${D}nothing below is needed for ./check_all.sh${Z}"
 record glpk      "$GLPK" "$([ "$GLPK" = 1 ] && echo present)" "GLPK (-lglpk)" \
         "sec5 alpha_fast.c, the n=10 census pre-filter  [brew install glpk / apt-get install libglpk-dev]" 0
 record gentourng "$([ -n "$GENT" ] && echo 1 || echo 0)" "$([ -n "$GENT" ] && echo present)" "nauty gentourng" \
         "n=11 census, whole-catalogue scans  [brew install nauty / apt-get install nauty]" 0
-record lrs       "$([ -n "$LRS" ] && echo 1 || echo 0)" "$([ -n "$LRS" ] && echo present)" "lrs (lrslib)" \
-        "sec5 non-margin-1 obstacle enumerator  [brew install lrslib / apt-get install lrslib]" 0
 
 # ---- optional CPLEX ------------------------------------------------------------------
 v=$(rver Rcplex);   RCPX=$([ "$v" != - ] && echo 1 || echo 0)
@@ -155,16 +156,17 @@ v2=$(rver cplexAPI); RAPI=$([ "$v2" != - ] && echo 1 || echo 0)
 v3=$(pyver cplex);  PCPX=$([ "$v3" != - ] && echo 1 || echo 0)
 
 section "IBM CPLEX (optional)     ${D}no headline result needs it; every reproducibility script has a free twin${Z}"
-record cplex_r   "$RCPX" "$v"  "Rcplex"      "appendices set cover, sec5 nm1 cover" 0
+record cplex_r   "$RCPX" "$v"  "Rcplex"      "appendices set cover" 0
 record cplex_api "$RAPI" "$v2" "cplexAPI"    "sec6 ilp10 sweep" 0
 record cplex_py  "$PCPX" "$v3" "cplex (py)"  "sec5 primal certificate, n10/reg11 ILPs" 0
 
 # ---- shipped + downloaded data -------------------------------------------------------
 DATA_OK=1
 for f in data/regulartournaments11.RData data/n9_obstacle_keys.rds \
-         data/n9_obstacle_catalog_exact.rds data/n9_nm1_obstacle_catalog.rds \
-         data/n9_margin1only_tournaments.rds data/n9_nm1_obstacle_cover.rds \
-         sec5_a3_boundary/n9_obstacle_certs.rds sec5_a3_boundary/n9_nm1_obstacle_certs.rds \
+         appendices/obstacle_catalogue/n9_minimal_obstacles.tsv \
+         appendices/obstacle_catalogue/n9_signed_obstacles_254.tsv \
+         appendices/obstacle_catalogue/the1054.txt appendices/obstacle_catalogue/g8set_16620.txt \
+         appendices/obstacle_catalogue/margin1_254.txt \
          sec7_paley43/d0_reps.txt; do
   [ -s "$f" ] || DATA_OK=0
 done

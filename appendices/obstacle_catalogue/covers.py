@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Minimum covers of the 17,674 non-3-inducible 9-tournaments by obstacle classes, two readings:
+"""Minimum covers of the 17,674 non-3-inducible 9-tournaments, and of the 254 tournaments that are 3-inducible
+but not with unit margin, by obstacle classes, two readings:
   (M) containment: a class covers T if T contains the class's support as a subdigraph (arcs oriented as in T);
   (S) own obstacles: a class covers T if it is one of T's own minimal obstacles.
 Among minimum covers, the one with the least total multiplicity is reported (a secondary objective).
 
-Inputs: n9_minimal_obstacles.tsv (build_catalogue.py), the1054.txt, g8set_16620.txt, face1054_*.jsonl and
-face16620_*.jsonl.  Containment is decided by networkx VF2 (subgraph monomorphism) and igraph LAD, which must
+Inputs: n9_minimal_obstacles.tsv and n9_signed_obstacles_254.tsv (build_catalogue.py), the1054.txt,
+g8set_16620.txt, margin1_254.txt, and face1054_*.jsonl, face16620_*.jsonl, face254_*.jsonl.  Containment is decided by networkx VF2 (subgraph monomorphism) and igraph LAD, which must
 agree.  Covers are exact 0/1 programs solved by CP-SAT (count first, then total multiplicity at that count).
 """
 import glob, json
@@ -99,6 +100,27 @@ def main():
     print(f"(S) own obstacles: the 1,054 need {k1} classes (total multiplicity {c1}): {' '.join(ids[j] for j in ch1)}")
     print(f"    the {len(below)} of the 16,620 with alpha* < 13/20 need {k2} (total {c2}): {' '.join(ids[j] for j in ch2)};")
     print(f"    the others have only G8.  Minimum cover of the 17,674: {k1 + k2 + 1} classes.")
+
+    # the 254, signed classes: (M) a class covers T if T contains its arcs (its signed weights, put on T,
+    # bound alpha^=(T) by the class's value); (S) a class covers T if it is one of T's own minimal obstacles
+    h = open("n9_signed_obstacles_254.tsv").readline().rstrip("\n").split("\t")
+    ucls = []
+    for line in list(open("n9_signed_obstacles_254.tsv"))[1:]:
+        f = dict(zip(h, line.rstrip("\n").split("\t")))
+        arcs, m = [], []
+        for a in f["arclist"].split(";"):
+            uv, x = a.split(":"); u, v = uv.split(">"); arcs.append((int(u), int(v))); m.append(int(x))
+        ucls.append(dict(id=f["id"], arcs=arcs, total=sum(abs(x) for x in m), key=canon(arcs, m)))
+    uids = [c["id"] for c in ucls]; ucost = [c["total"] for c in ucls]
+    T254 = read_tournaments("margin1_254.txt"); assert len(T254) == 254
+    UM = [[j for j, c in enumerate(ucls) if contains(A, c["arcs"])] for A in T254]
+    k, c, ch = lex_cover(UM, ucost, "(M) 254")
+    print(f"254, (M) containment: {k} classes (total multiplicity {c}): {' '.join(uids[j] for j in ch)}")
+    ukey = {cl["key"]: j for j, cl in enumerate(ucls)}
+    r254 = sorted((json.loads(l) for p in glob.glob("face254_*.jsonl") for l in open(p)), key=lambda r: r["idx"])
+    US = [sorted({ukey[canon([tuple(a) for a in s["arcs"]], mults(s["y"]))] for s in r["supports"]}) for r in r254]
+    k, c, ch = lex_cover(US, ucost, "(S) 254")
+    print(f"254, (S) own obstacles: {k} classes (total multiplicity {c}): {' '.join(uids[j] for j in ch)}")
 
 
 if __name__ == "__main__":

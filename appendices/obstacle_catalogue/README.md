@@ -34,14 +34,24 @@ positive (the module docstring has the argument).
 - `face_signed.py` — the same for the exact-coverage LP (y of any sign), used for the 254.
 - `build_catalogue.py` — groups the minimal supports into isomorphism classes of weighted multidigraphs
   (bliss canonical forms, via igraph), numbers them as in the paper, and writes
-  `n9_minimal_obstacles.tsv` and `n9_signed_obstacles_254.tsv`.
+  `n9_minimal_obstacles.tsv` and `n9_signed_obstacles_254.tsv`. One row per class; `arclist` gives the
+  obstacle as a multidigraph, `u>v:m` meaning arc u → v with multiplicity m, and an arc's dual weight is its
+  multiplicity divided by the sum of all multiplicities (`total_mult`; in the signed file, where a negative
+  multiplicity marks a negative weight, `sum_mult`).
   The checks below are part of the script, and any failure stops it:
   - every tournament appears exactly once;
   - every minimal support carries a unique dual;
   - every tournament with G8 and α\* = 13/20 has only copies of G8 as minimal obstacles;
   - every class is Eulerian.
-- `covers.py` — minimum covers of the 17,674 by obstacle classes, under containment and under the
-  tournaments' own obstacles, solved exactly by CP-SAT (fewest classes, then least total multiplicity).
+- `verify_catalogue.py` — checks the two catalogue files exactly, with the Python standard library only.
+  For every class, the best order of its vertices (Held–Karp over vertex subsets, in integers) must
+  collect exactly the listed share α\* (or α⁼) of its weight, and that share must be below 2/3. A
+  tournament containing the class's arcs then has α\* (or α⁼) at most that value, so the class certifies
+  that the tournament is not 3-inducible (or not with unit margin). It also checks that every class is
+  Eulerian. `../../check_all.sh` runs it.
+- `covers.py` — minimum covers of the 17,674, and of the 254, by obstacle classes, under containment and
+  under the tournaments' own obstacles, solved exactly by CP-SAT (fewest classes, then least total
+  multiplicity).
 - Inputs (kept in the repository, 1.6 MB): `the1054.txt`, the 1,054 non-3-inducible 9-tournaments that do
   not contain G8; `g8set_16620.txt`, the 16,620 that do; `margin1_254.txt`, the 254 tournaments that are
   3-inducible but not with unit margin. One tournament per line, as nine 0/1 rows of its adjacency matrix.
@@ -57,6 +67,7 @@ for k in 0 1 2 3 4 5 6 7; do python3 face_vertices.py the1054.txt face1054_$k.js
 for k in 0 1 2 3 4 5 6 7; do python3 face_vertices.py g8set_16620.txt face16620_$k.jsonl $k 8 & done; wait
 for k in 0 1 2 3 4 5 6 7; do python3 face_signed.py margin1_254.txt face254_$k.jsonl $k 8 & done; wait
 python3 build_catalogue.py
+python3 verify_catalogue.py
 python3 covers.py
 ```
 
@@ -72,7 +83,14 @@ n9_minimal_obstacles.tsv: 59 classes; self-converse 13; shared between the two c
 254: 359 minimal signed supports, 51 classes; alpha^= [('21/32', 32), ('23/35', 7), ('25/38', 44), ('27/41', 50), ('29/44', 31), ('31/47', 54), ('35/53', 4), ('37/56', 16), ('39/59', 4), ('41/62', 4), ('45/68', 8)]
 ```
 
-`covers.py` takes about 3 minutes on one core and prints (several minimum covers can tie; the counts and
+`verify_catalogue.py` takes under a second and prints:
+
+```
+n9_minimal_obstacles.tsv: 59/59 classes certified exactly (best order = listed value < 2/3; Eulerian)
+n9_signed_obstacles_254.tsv: 51/51 classes certified exactly (best order = listed value < 2/3; Eulerian)
+```
+
+`covers.py` takes about 4 minutes on one core and prints (several minimum covers can tie; the counts and
 the least total multiplicity are what is determined):
 
 ```
@@ -83,4 +101,6 @@ the least total multiplicity are what is determined):
 (S) own obstacles: the 1,054 need 37 classes (total multiplicity 1283): O01 O02 O03 O04 O05 O06 O07 O08 O09 O10 O11 O12 O13 O14 O17 O18 O19 O20 O21 O22 O23 O24 O25 O26 O27 O28 O29 O31 O32 O33 O34 O35 O36 O37 O38 O39 O40
     the 357 of the 16,620 with alpha* < 13/20 need 14 (total 633): O41 O42 O43 O44 O45 O46 O47 O48 O49 O50 O51 O52 O55 O56;
     the others have only G8.  Minimum cover of the 17,674: 52 classes.
+254, (M) containment: 25 classes (total multiplicity 1312): U03 U07 U08 U11 U12 U13 U24 U25 U26 U27 U30 U31 U32 U37 U38 U39 U40 U41 U42 U43 U45 U46 U47 U50 U51
+254, (S) own obstacles: 35 classes (total multiplicity 1742): U01 U02 U03 U04 U07 U08 U09 U11 U12 U13 U14 U15 U21 U24 U25 U26 U28 U29 U30 U31 U32 U35 U36 U37 U38 U39 U40 U41 U42 U43 U45 U46 U47 U50 U51
 ```

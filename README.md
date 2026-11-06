@@ -68,16 +68,16 @@ Optional, and only for specific extras — `./check_all.sh` needs none of them:
   pre-filter (`brew install glpk` / `apt-get install libglpk-dev`).
 - [nauty](https://pallini.di.uniroma1.it/) `gentourng` — the n = 11 census and whole-catalogue scans
   (`brew install nauty` / `apt-get install nauty`; the upstream tarball is also fine).
-- [lrs](http://cgm.cs.mcgill.ca/~avis/C/lrs.html) — the non-unit-margin obstacle enumerator
-  (`brew install lrslib` / `apt-get install lrslib`).
+- [cddlib](https://github.com/cddlib/cddlib) and GMP, under the Python package `pycddlib` — regenerating
+  the obstacle catalogue at n = 9 (`brew install cddlib gmp`, then `uv sync --extra obstacles`).
 - The R extras `combinat`, `slam`, `Matrix`, `pracma`, `tidyverse` … cover incidental helpers in
   `appendices/`: `Rscript install_r_packages.R --all`.
 - `matplotlib` (the report's figures) and `marimo` (the tutorial notebook):
   `uv sync --extra figures --extra notebook`.
 
-Two notes on how little is really required: the solver-free obstacle checker
-`sec5_a3_boundary/verify_obstacle_certs.R` needs **only `gmp`**, and `appendices/hk_oracle.c` is an
-`#include`d oracle rather than a standalone program.
+Two notes on how little is really required: the obstacle checker
+`appendices/obstacle_catalogue/verify_catalogue.py` needs **only the Python standard library**, and
+`appendices/hk_oracle.c` is an `#include`d oracle rather than a standalone program.
 
 **Data** — McKay's digraph catalogues, fetched and verified by `./get_data.sh` (see *Data policy*).
 
