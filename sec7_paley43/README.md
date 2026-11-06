@@ -12,8 +12,16 @@ sets** ⇒ contradiction. The full mathematics is in
 **Files.**
 - `reproduce_paley43.sh` — the driver; builds the tools and runs the proof in guarded, resumable
   stages 0–4 (self-documenting header: proof skeleton + resource envelope).
-- `dp43.c` — the MAS engine (Appendix E DP): certifies MAS(Paley43) = 543, builds the δ ≤ 2 layer
+- `dp43.c` — the MAS engine (the dynamic program of the paper's MAS appendix): certifies MAS(Paley43) = 543, builds the δ ≤ 2 layer
   tables, and joins/enumerates the level-≤ 1 shell; also carries a `selftest` mode.
+  To save memory, `dp43` drops layer records that cannot lie on an order with at least τ forward
+  arcs (τ = 541 in the certifying run), so in general a table stores a lower bound on g(S), the
+  exact value of the paper's recurrence. **In the certifying run this pruning removed no whole
+  Aut-orbit:** every layer L0–L22 reaches its full orbit count, which the code computes by
+  Burnside's lemma (the `-> N reps (burn N)` line of each layer in the run log; e.g. L22:
+  1,165,060,668 of 1,165,060,668). The pruning test is monotone in the stored value, so whenever a
+  set survives, its best record survives too; with every orbit present, each stored value equals
+  g(S), and the tables are exactly those of the DP that the paper describes.
 - `canon_reps.c` — canonicalizes and dedups the enumerated orders into Aut-orbit representatives,
   and validates completeness against the census orbit count (must equal 1,841,303).
 - `razor_screen.c` — the co-backing screen: proves no two δ ≤ 1 orders have disjoint double-back sets.
