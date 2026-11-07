@@ -110,6 +110,7 @@ analytic and need no computation. Everything below does.
 |---|---|
 | Theorem 4.1: FAS = HS₃ for **every** tournament on n ≤ 10 (exhaustive) | `hs3fas.c` — Held–Karp MAS + exact minimum 3-cycle hitting set over a McKay catalogue |
 | Counterexample 4.2: regular T\* on 11 vertices with FAS = 17 > 16 = HS₃ | `make_tstar_figs.R` — self-checks FAS = 17 and HS₃ = 16 (lpSolve) |
+| FAS = HS₃ for every regular tournament on 11 vertices except T\*: among the 1,223 regular tournaments on 11 vertices, 48 of them 3-inducible, T\* is the only one with HS₃ < FAS | `reg11_fas_hs3.sh` — FAS, HS₃ and 3-inducibility of every entry, each by two exact engines; stops unless the counts are 1,223 / 48 / 1 and the one is T\* |
 | The six 3-inducible self-converse violators (Figure 4) | `make_conj2_cex_figs.R` — re-checks self-converse and HS₃ < FAS |
 
 ### The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
@@ -145,7 +146,7 @@ The infinite obstacle family (a forthcoming companion paper) is **not** included
 
 No large data is committed — the scripts read McKay catalogues you download. One small input is the
 exception, kept in the repo: `data/regulartournaments11.RData` (40 KB, the 1,223 regular 11-vertex
-tournaments the cA3 scripts read).
+tournaments that `sec4_fas_hs3/reg11_fas_hs3.sh` and the cA3 scripts read).
 
 `appendices/obstacle_catalogue/n9_minimal_obstacles.tsv` (15 KB) is the catalogue of minimal obstacles
 at n = 9: the 59 isomorphism classes of inclusion-minimal supports of optimal duals of the predictability
@@ -179,7 +180,7 @@ Brendan McKay's digraph archive, <https://users.cecs.anu.edu.au/~bdm/data/digrap
 
 ```
 sec3_mhp/          MHP Conjecture 1 counterexamples
-sec4_fas_hs3/      MHP Conjecture 2 (FAS = HS₃): n ≤ 10 census + T*
+sec4_fas_hs3/      MHP Conjecture 2 (FAS = HS₃): n ≤ 10 census, T*, regular n = 11
 sec5_a3_boundary/  A(3) threshold on the boundary: cA3, censuses, cA6
 appendices/        shared engines + appendix-specific tools
 common/  data/     shared α* oracle and progress helper; the few committed data inputs

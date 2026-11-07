@@ -10,18 +10,13 @@ library(igraph)
 library(lpSolve)
 # outputs are written to the working directory -- run this script from its own folder
 
-voters = list(c(4, 5, 6, 11, 8, 9, 10, 2, 7, 1, 3),
-              c(10, 8, 9, 1, 2, 3, 7, 5, 6, 4, 11),
-              c(3, 7, 11, 1, 2, 6, 4, 5, 9, 10, 8))
+source("tstar_voters.R")   # tstar_voters, majority_matrix
 n = 11
-L = matrix(0, n, n)
-for (v in voters) for (a in 1:(n - 1)) for (b in (a + 1):n) {
-  L[v[a], v[b]] = L[v[a], v[b]] + 1
-}
+M = majority_matrix(tstar_voters)
+stopifnot(nrow(M) == n)
 edges = NULL
 for (i in 1:(n - 1)) for (j in (i + 1):n) {
-  stopifnot(L[i, j] != L[j, i])
-  edges = rbind(edges, if (L[i, j] > L[j, i]) c(i, j) else c(j, i))
+  edges = rbind(edges, if (M[i, j] == 1) c(i, j) else c(j, i))
 }
 g = graph_from_edgelist(edges, directed = TRUE)
 stopifnot(all(degree(g, mode = "out") == 5))  # T* is regular

@@ -103,6 +103,8 @@ check "sec3: min-weight FAS counterexamples" "unique min-weight FAS confirmed, v
 echo "${C}== sec4_fas_hs3 (FAS vs HS3; T* counterexample) ==${Z}"
 check "sec4: T* has FAS 17 > HS3 16"        "minimum 3-cycle hitting set has 16 arcs" "R r_igraph r_lpSolve" \
       "cd sec4_fas_hs3 && Rscript make_tstar_figs.R; rm -f *.pdf"
+check "sec4: regular n = 11, HS3 < FAS only at T*" "CONFIRMED: of the 1223 regular tournaments on 11 vertices, 48 are 3-inducible" "cc R r_igraph python py_ortools" \
+      "cd sec4_fas_hs3 && ./reg11_fas_hs3.sh"
 
 echo "${C}== sec5_a3_boundary (A(3) fails on the boundary) ==${Z}"
 check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "R r_lpSolve r_rcdd r_gmp" \
