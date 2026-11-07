@@ -8,6 +8,9 @@ Among minimum covers, the one with the least total multiplicity is reported (a s
 Inputs: n9_minimal_obstacles.tsv and n9_signed_obstacles_254.tsv (build_catalogue.py), the1054.txt,
 g8set_16620.txt, margin1_254.txt, and face1054_*.jsonl, face16620_*.jsonl, face254_*.jsonl.  Containment is decided by networkx VF2 (subgraph monomorphism) and igraph LAD, which must
 agree.  Covers are exact 0/1 programs solved by CP-SAT (count first, then total multiplicity at that count).
+
+Output: the summary on stdout, and covers.tsv (one row per cover: collection, reading, number of classes,
+total multiplicity, class ids), which draw_covers.R reads.
 """
 import glob, json
 from fractions import Fraction
@@ -76,6 +79,7 @@ def main():
     M = [[j for j, c in enumerate(cls) if c["alpha"] >= amin and contains(A, c["arcs"])] for A in T1054]
     assert all(g8 not in s for s in M), "a tournament of the 1,054 contains G8"
     k, c, ch = lex_cover(M, cost, "(M) 1,054")
+    out = [("17674", "M", k + 1, c + cost[g8], ["G8"] + [ids[j] for j in ch])]
     witness = None
     for t, A in enumerate(T16):
         assert contains(A, cls[g8]["arcs"]), f"tournament {t} of the 16,620 does not contain G8"
@@ -100,6 +104,7 @@ def main():
     print(f"(S) own obstacles: the 1,054 need {k1} classes (total multiplicity {c1}): {' '.join(ids[j] for j in ch1)}")
     print(f"    the {len(below)} of the 16,620 with alpha* < 13/20 need {k2} (total {c2}): {' '.join(ids[j] for j in ch2)};")
     print(f"    the others have only G8.  Minimum cover of the 17,674: {k1 + k2 + 1} classes.")
+    out.append(("17674", "S", k1 + k2 + 1, c1 + c2 + cost[g8], [ids[j] for j in sorted(set(ch1) | set(ch2) | {g8})]))
 
     # the 254, signed classes: (M) a class covers T if T contains its arcs (its signed weights, put on T,
     # bound alpha^=(T) by the class's value); (S) a class covers T if it is one of T's own minimal obstacles
@@ -116,11 +121,18 @@ def main():
     UM = [[j for j, c in enumerate(ucls) if contains(A, c["arcs"])] for A in T254]
     k, c, ch = lex_cover(UM, ucost, "(M) 254")
     print(f"254, (M) containment: {k} classes (total multiplicity {c}): {' '.join(uids[j] for j in ch)}")
+    out.append(("254", "M", k, c, [uids[j] for j in ch]))
     ukey = {cl["key"]: j for j, cl in enumerate(ucls)}
     r254 = sorted((json.loads(l) for p in glob.glob("face254_*.jsonl") for l in open(p)), key=lambda r: r["idx"])
     US = [sorted({ukey[canon([tuple(a) for a in s["arcs"]], mults(s["y"]))] for s in r["supports"]}) for r in r254]
     k, c, ch = lex_cover(US, ucost, "(S) 254")
     print(f"254, (S) own obstacles: {k} classes (total multiplicity {c}): {' '.join(uids[j] for j in ch)}")
+    out.append(("254", "S", k, c, [uids[j] for j in ch]))
+    with open("covers.tsv", "w") as fh:
+        fh.write("collection\treading\tn_classes\ttotal_mult\tids\n")
+        for coll, rd, n, tm, cl in out:
+            assert len(cl) == n, f"{coll} ({rd}): {len(cl)} ids for a cover of {n} classes"
+            fh.write(f"{coll}\t{rd}\t{n}\t{tm}\t{' '.join(cl)}\n")
 
 
 if __name__ == "__main__":

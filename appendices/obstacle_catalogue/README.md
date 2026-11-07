@@ -51,13 +51,17 @@ positive (the module docstring has the argument).
   Eulerian. `../../check_all.sh` runs it.
 - `covers.py` — minimum covers of the 17,674, and of the 254, by obstacle classes, under containment and
   under the tournaments' own obstacles, solved exactly by CP-SAT (fewest classes, then least total
-  multiplicity).
+  multiplicity). It writes the four covers to `covers.tsv`.
+- `draw_covers.R` — draws the classes of the two containment covers: `figures/A_prime.pdf`, the 26 classes
+  that cover the 17,674 (G8 and 25 others), and `figures/B_prime.pdf`, the 25 signed classes that cover
+  the 254, with one page per class in `figures/A_prime/` and `figures/B_prime/`. An arc is labelled with
+  its multiplicity when that is not 1; a red dashed arc has negative weight.
 - Inputs (kept in the repository, 1.6 MB): `the1054.txt`, the 1,054 non-3-inducible 9-tournaments that do
   not contain G8; `g8set_16620.txt`, the 16,620 that do; `margin1_254.txt`, the 254 tournaments that are
   3-inducible but not with unit margin. One tournament per line, as nine 0/1 rows of its adjacency matrix.
 
 **Dependencies.** Python 3 with `numpy`, `ortools`, `pycddlib` (3.x, which needs the cddlib and GMP C
-libraries, e.g. `brew install cddlib gmp`), `python-igraph` and `networkx`.
+libraries, e.g. `brew install cddlib gmp`), `python-igraph` and `networkx`. The drawings need R with the `igraph` package.
 
 **How to run.** Each script takes `<k> <K>` and processes every K-th tournament starting at k, so the
 work splits over K cores.
@@ -69,6 +73,7 @@ for k in 0 1 2 3 4 5 6 7; do python3 face_signed.py margin1_254.txt face254_$k.j
 python3 build_catalogue.py
 python3 verify_catalogue.py
 python3 covers.py
+Rscript draw_covers.R
 ```
 
 **What to expect.** On 8 cores, the 17,674 take about 20 minutes, at about 0.5 s per tournament
