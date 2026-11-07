@@ -4,7 +4,7 @@
 #   B' -- the 25 signed classes covering the 254 tournaments that are 3-inducible but not with unit margin.
 # A class covers a tournament under containment when the tournament contains the class's arcs.
 #
-# Each class is drawn as its multidigraph: an arc's label is its multiplicity when that is not 1
+# Each class is drawn as its multidigraph: an arc's thickness is proportional to its multiplicity
 # (dual weight = multiplicity / sum of multiplicities), and a red dashed arc has negative weight.
 # Vertices keep the numbering of the arclist column of the catalogue file.
 #
@@ -14,6 +14,8 @@
 # figures/A_prime/<id>.pdf, figures/B_prime/<id>.pdf (one page per class).
 # Run from this folder:  Rscript draw_covers.R
 library(igraph)
+
+arcWidth = function(m) 0.9 * abs(m)              # line width proportional to the multiplicity
 
 readClasses = function(path) {
   d = read.delim(path, colClasses = "character")
@@ -39,8 +41,13 @@ drawClass = function(g, title) {
   m = E(g)$m
   plot(g, layout = lay, vertex.color = "orange", vertex.label.color = "navy", vertex.size = 20,
        vertex.label.cex = 0.9, edge.color = ifelse(m < 0, "red3", "grey30"), edge.lty = ifelse(m < 0, 2, 1),
-       edge.width = 1.2, edge.arrow.size = 0.4, edge.label = ifelse(abs(m) == 1, NA, abs(m)),
-       edge.label.color = "black", edge.label.cex = 0.85, main = title, cex.main = 1)
+       edge.width = arcWidth(m), edge.arrow.size = 0.4, main = title, cex.main = 1)
+}
+
+multLegend = function(mults, signed) {
+  lab = paste("multiplicity", mults); lwd = arcWidth(mults); col = rep("grey30", length(mults)); lty = rep(1, length(mults))
+  if (signed) { lab = c(lab, "negative weight"); lwd = c(lwd, arcWidth(1)); col = c(col, "red3"); lty = c(lty, 2) }
+  legend("bottom", legend = lab, lwd = lwd, col = col, lty = lty, horiz = TRUE, bty = "n", cex = 1.1, seg.len = 3)
 }
 
 drawCover = function(ids, classes, valueName, stem) {
@@ -49,9 +56,13 @@ drawCover = function(ids, classes, valueName, stem) {
   titles = lapply(ids, function(i) bquote(.(i) ~~~ alpha^.(valueName) == .(classes[[i]]$alpha)))
   graphs = lapply(ids, function(i) classGraph(classes[[i]]))
   ncol = 5; nrow = ceiling(length(ids) / ncol)
-  pdf(file.path("figures", paste0(stem, ".pdf")), width = 3 * ncol, height = 3.2 * nrow)
-  par(mfrow = c(nrow, ncol), mar = c(0.3, 0.3, 1.6, 0.3))
+  mults = sort(unique(unlist(lapply(graphs, function(g) abs(E(g)$m)))))
+  signed = any(unlist(lapply(graphs, function(g) E(g)$m < 0)))
+  pdf(file.path("figures", paste0(stem, ".pdf")), width = 3 * ncol, height = 3.2 * nrow + 0.5)
+  par(mfrow = c(nrow, ncol), mar = c(0.3, 0.3, 1.6, 0.3), oma = c(2, 0, 0, 0))
   for (k in seq_along(ids)) drawClass(graphs[[k]], titles[[k]])
+  par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+  plot.new(); multLegend(mults, signed)
   dev.off()
   dir.create(file.path("figures", stem), showWarnings = FALSE)
   for (k in seq_along(ids)) {

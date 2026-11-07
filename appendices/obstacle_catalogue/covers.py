@@ -3,7 +3,8 @@
 but not with unit margin, by obstacle classes, two readings:
   (M) containment: a class covers T if T contains the class's support as a subdigraph (arcs oriented as in T);
   (S) own obstacles: a class covers T if it is one of T's own minimal obstacles.
-Among minimum covers, the one with the least total multiplicity is reported (a secondary objective).
+Among minimum covers, the one with the least total multiplicity is reported (a secondary objective), and among
+those the lexicographically smallest list of classes; under (M) the script also lists every minimum cover.
 
 Inputs: n9_minimal_obstacles.tsv and n9_signed_obstacles_254.tsv (build_catalogue.py), the1054.txt,
 g8set_16620.txt, margin1_254.txt, and face1054_*.jsonl, face16620_*.jsonl, face254_*.jsonl.  Containment is decided by networkx VF2 (subgraph monomorphism) and igraph LAD, which must
@@ -38,26 +39,65 @@ def contains(A, arcs):
     return vf2
 
 
-def lex_cover(sets, cost, label):
-    """sets[i] = the columns covering row i.  Minimum number of columns, then least total cost."""
+def lex_cover(sets, cost, label, enumerate_all=False):
+    """sets[i] = the columns covering row i.  Minimum number of columns, then least total cost, then the
+    lexicographically smallest list of columns (a fixed rule, so the cover reported does not depend on the
+    solver).  With enumerate_all, also every cover attaining the first two minima."""
     ncol = len(cost)
     for i, s in enumerate(sets):
         assert s, f"{label}: row {i} has no covering column"
-    res = []
-    for stage in (0, 1):
+
+    def model():
         md = cp_model.CpModel(); x = [md.NewBoolVar("") for _ in range(ncol)]
         for s in sets:
             md.AddBoolOr([x[j] for j in s])
-        if stage == 0:
-            md.Minimize(sum(x))
-        else:
-            md.Add(sum(x) == res[0]); md.Minimize(sum(cost[j] * x[j] for j in range(ncol)))
+        return md, x
+
+    def solve(md):
         sv = cp_model.CpSolver(); sv.parameters.num_workers = 1
-        assert sv.Solve(md) == cp_model.OPTIMAL, f"{label}: cover not proven optimal"
-        res.append(int(sv.ObjectiveValue()))
-        chosen = [j for j in range(ncol) if sv.Value(x[j])]
-    assert len(chosen) == res[0] and sum(cost[j] for j in chosen) == res[1]
-    return res[0], res[1], chosen
+        return sv, sv.Solve(md)
+
+    md, x = model(); md.Minimize(sum(x))
+    sv, st = solve(md); assert st == cp_model.OPTIMAL, f"{label}: cover not proven optimal"
+    k = int(sv.ObjectiveValue())
+    md, x = model(); md.Add(sum(x) == k); md.Minimize(sum(cost[j] * x[j] for j in range(ncol)))
+    sv, st = solve(md); assert st == cp_model.OPTIMAL, f"{label}: cover not proven optimal"
+    c = int(sv.ObjectiveValue())
+    fixed = {}                                  # lexicographic: take column j whenever an optimal cover allows it
+    for j in range(ncol):
+        md, x = model(); md.Add(sum(x) == k); md.Add(sum(cost[i] * x[i] for i in range(ncol)) == c)
+        for i, v in fixed.items():
+            md.Add(x[i] == v)
+        md.Add(x[j] == 1)
+        sv, st = solve(md)
+        assert st in (cp_model.OPTIMAL, cp_model.INFEASIBLE), f"{label}: column {j} undecided"
+        fixed[j] = int(st == cp_model.OPTIMAL)
+    chosen = [j for j in range(ncol) if fixed[j]]
+    assert len(chosen) == k and sum(cost[j] for j in chosen) == c
+    assert all(any(j in chosen for j in s) for s in sets), f"{label}: lexicographic choice is not a cover"
+    if not enumerate_all:
+        return k, c, chosen
+    md, x = model(); md.Add(sum(x) == k); md.Add(sum(cost[j] * x[j] for j in range(ncol)) == c)
+    sols = []
+
+    class Collect(cp_model.CpSolverSolutionCallback):
+        def __init__(self):
+            super().__init__()
+        def on_solution_callback(self):
+            sols.append(frozenset(j for j in range(ncol) if self.Value(x[j])))
+
+    sv = cp_model.CpSolver(); sv.parameters.num_workers = 1; sv.parameters.enumerate_all_solutions = True
+    assert sv.Solve(md, Collect()) == cp_model.OPTIMAL, f"{label}: enumeration of minimum covers incomplete"
+    assert frozenset(chosen) in sols
+    return k, c, chosen, sols
+
+
+def free_part(sols, names, conv):
+    """the classes in some but not every minimum cover, each with its converse"""
+    common = frozenset.intersection(*sols)
+    free = sorted(frozenset.union(*sols) - common)
+    return (f"{len(sols)} minimum covers, sharing {len(common)} classes; the others are chosen among "
+            + ", ".join(f"{names[j]} (converse {conv[j]})" for j in free))
 
 
 def main():
@@ -67,7 +107,7 @@ def main():
         arcs, m = [], []
         for a in f["arclist"].split(";"):
             uv, x = a.split(":"); u, v = uv.split(">"); arcs.append((int(u), int(v))); m.append(int(x))
-        cls.append(dict(id=f["id"], alpha=Fraction(f["alpha"]), arcs=arcs, total=sum(m), key=canon(arcs, m)))
+        cls.append(dict(id=f["id"], alpha=Fraction(f["alpha"]), arcs=arcs, total=sum(m), key=canon(arcs, m), conv=f["converse"]))
     ids = [c["id"] for c in cls]; cost = [c["total"] for c in cls]; g8 = ids.index("G8")
     T1054 = read_tournaments("the1054.txt"); T16 = read_tournaments("g8set_16620.txt")
     assert len(T1054) == 1054 and len(T16) == 16620
@@ -78,7 +118,7 @@ def main():
     amin = min(Fraction(json.loads(l)["alpha"]) for p in glob.glob("face1054_*.jsonl") for l in open(p))
     M = [[j for j, c in enumerate(cls) if c["alpha"] >= amin and contains(A, c["arcs"])] for A in T1054]
     assert all(g8 not in s for s in M), "a tournament of the 1,054 contains G8"
-    k, c, ch = lex_cover(M, cost, "(M) 1,054")
+    k, c, ch, solsM = lex_cover(M, cost, "(M) 1,054", enumerate_all=True)
     out = [("17674", "M", k + 1, c + cost[g8], ["G8"] + [ids[j] for j in ch])]
     witness = None
     for t, A in enumerate(T16):
@@ -90,6 +130,7 @@ def main():
     print(f"    all 16,620 contain G8, and tournament {witness} of g8set_16620.txt contains none of the other classes,")
     print(f"    so G8 is in every cover and covers all 16,620.  Minimum cover of the 17,674: {k + 1} classes")
     print(f"    (G8 + the above; total multiplicity {c + cost[g8]}).")
+    print(f"    The 1,054: {free_part(solsM, ids, [cl['conv'] for cl in cls])}.")
 
     # (S) own obstacles
     key2j = {cl["key"]: j for j, cl in enumerate(cls)}
@@ -115,12 +156,13 @@ def main():
         arcs, m = [], []
         for a in f["arclist"].split(";"):
             uv, x = a.split(":"); u, v = uv.split(">"); arcs.append((int(u), int(v))); m.append(int(x))
-        ucls.append(dict(id=f["id"], arcs=arcs, total=sum(abs(x) for x in m), key=canon(arcs, m)))
+        ucls.append(dict(id=f["id"], arcs=arcs, total=sum(abs(x) for x in m), key=canon(arcs, m), conv=f["converse"]))
     uids = [c["id"] for c in ucls]; ucost = [c["total"] for c in ucls]
     T254 = read_tournaments("margin1_254.txt"); assert len(T254) == 254
     UM = [[j for j, c in enumerate(ucls) if contains(A, c["arcs"])] for A in T254]
-    k, c, ch = lex_cover(UM, ucost, "(M) 254")
+    k, c, ch, solsU = lex_cover(UM, ucost, "(M) 254", enumerate_all=True)
     print(f"254, (M) containment: {k} classes (total multiplicity {c}): {' '.join(uids[j] for j in ch)}")
+    print(f"    {free_part(solsU, uids, [cl['conv'] for cl in ucls])}.")
     out.append(("254", "M", k, c, [uids[j] for j in ch]))
     ukey = {cl["key"]: j for j, cl in enumerate(ucls)}
     r254 = sorted((json.loads(l) for p in glob.glob("face254_*.jsonl") for l in open(p)), key=lambda r: r["idx"])

@@ -54,8 +54,8 @@ positive (the module docstring has the argument).
   multiplicity). It writes the four covers to `covers.tsv`.
 - `draw_covers.R` — draws the classes of the two containment covers: `figures/A_prime.pdf`, the 25 classes
   that cover the 17,674 together with G8 (which every cover contains, and which the paper draws separately), and `figures/B_prime.pdf`, the 25 signed classes that cover
-  the 254, with one page per class in `figures/A_prime/` and `figures/B_prime/`. An arc is labelled with
-  its multiplicity when that is not 1; a red dashed arc has negative weight.
+  the 254, with one page per class in `figures/A_prime/` and `figures/B_prime/`. An arc's thickness is
+  proportional to its multiplicity; a red dashed arc has negative weight.
 - Inputs (kept in the repository, 1.6 MB): `the1054.txt`, the 1,054 non-3-inducible 9-tournaments that do
   not contain G8; `g8set_16620.txt`, the 16,620 that do; `margin1_254.txt`, the 254 tournaments that are
   3-inducible but not with unit margin. One tournament per line, as nine 0/1 rows of its adjacency matrix.
@@ -95,17 +95,21 @@ n9_minimal_obstacles.tsv: 59/59 classes certified exactly (best order = listed v
 n9_signed_obstacles_254.tsv: 51/51 classes certified exactly (best order = listed value < 2/3; Eulerian)
 ```
 
-`covers.py` takes about 4 minutes on one core and prints (several minimum covers can tie; the counts and
-the least total multiplicity are what is determined):
+`covers.py` takes about 4 minutes on one core and prints the following. Among covers of the least size,
+it reports one of least total multiplicity, and among those the lexicographically smallest list of
+classes. Under containment it also lists every minimum cover: the classes not shared by all of them come
+in converse pairs.
 
 ```
 (M) containment: the 1,054 need 25 classes (total multiplicity 836): O01 O02 O03 O04 O05 O06 O07 O08 O09 O11 O12 O13 O14 O18 O19 O20 O21 O30 O32 O33 O34 O35 O36 O39 O40
     all 16,620 contain G8, and tournament 0 of g8set_16620.txt contains none of the other classes,
     so G8 is in every cover and covers all 16,620.  Minimum cover of the 17,674: 26 classes
     (G8 + the above; total multiplicity 856).
-(S) own obstacles: the 1,054 need 37 classes (total multiplicity 1283): O01 O02 O03 O04 O05 O06 O07 O08 O09 O10 O11 O12 O13 O14 O17 O18 O19 O20 O21 O22 O23 O24 O25 O26 O27 O28 O29 O31 O32 O33 O34 O35 O36 O37 O38 O39 O40
-    the 357 of the 16,620 with alpha* < 13/20 need 14 (total 633): O41 O42 O43 O44 O45 O46 O47 O48 O49 O50 O51 O52 O55 O56;
+    The 1,054: 8 minimum covers, sharing 22 classes; the others are chosen among O11 (converse O12), O12 (converse O11), O15 (converse O16), O16 (converse O15), O30 (converse O31), O31 (converse O30).
+(S) own obstacles: the 1,054 need 37 classes (total multiplicity 1283): O01 O02 O03 O04 O05 O06 O07 O08 O09 O10 O11 O12 O13 O14 O17 O18 O19 O20 O21 O22 O23 O24 O25 O26 O27 O28 O29 O30 O32 O33 O34 O35 O36 O37 O38 O39 O40
+    the 357 of the 16,620 with alpha* < 13/20 need 14 (total 633): O41 O42 O43 O44 O45 O46 O47 O48 O49 O50 O51 O52 O53 O56;
     the others have only G8.  Minimum cover of the 17,674: 52 classes.
 254, (M) containment: 25 classes (total multiplicity 1312): U03 U07 U08 U11 U12 U13 U24 U25 U26 U27 U30 U31 U32 U37 U38 U39 U40 U41 U42 U43 U45 U46 U47 U50 U51
-254, (S) own obstacles: 35 classes (total multiplicity 1742): U01 U02 U03 U04 U07 U08 U09 U11 U12 U13 U14 U15 U21 U24 U25 U26 U28 U29 U30 U31 U32 U35 U36 U37 U38 U39 U40 U41 U42 U43 U45 U46 U47 U50 U51
+    2 minimum covers, sharing 24 classes; the others are chosen among U43 (converse U44), U44 (converse U43).
+254, (S) own obstacles: 35 classes (total multiplicity 1742): U01 U02 U03 U04 U07 U08 U09 U11 U12 U13 U14 U15 U18 U24 U25 U26 U28 U29 U30 U31 U32 U35 U36 U37 U38 U39 U40 U41 U42 U43 U45 U46 U47 U50 U51
 ```
