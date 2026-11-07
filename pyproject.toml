@@ -9,15 +9,11 @@ license = { text = "MIT" }
 # Everything the package's Python scripts import, outside the standard library.
 # Both are free and pip-installable; no headline result needs anything else.
 dependencies = [
-    "ortools>=9.10",   # CP-SAT: the sec5 / sec6 / sec7 realizability checks
+    "ortools>=9.10",   # CP-SAT: the sec5 realizability checks
     "pulp>=2.8",       # CBC: the sec5 orbit-minimal certificate
 ]
 
 [project.optional-dependencies]
-# Only for the illustrated reproduction report's figures (repro/figures/make_figures.py).
-figures = ["matplotlib>=3.7"]
-# Only for the tutorial notebook (paley43_five_voters.py).
-notebook = ["marimo>=0.9"]
 # Only for the n = 9 obstacle catalogue (appendices/obstacle_catalogue/). pycddlib 3 needs the cddlib
 # and GMP C libraries installed first (e.g. `brew install cddlib gmp`).
 obstacles = ["numpy>=1.26", "pycddlib>=3.0", "python-igraph>=0.11", "networkx>=3.2"]

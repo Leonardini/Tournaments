@@ -33,9 +33,9 @@ tourn5.txt|tournaments5.txt|132|12|quick|sec4 hs3fas (n = 5)
 tourn6.txt|tournaments6.txt|896|56|quick|sec4 hs3fas (n = 6)
 tourn7.txt|tournaments7.txt|10032|456|quick|sec4 hs3fas (n = 7)
 tourn8.txt|tournaments8.txt|199520|6880|quick|sec4 hs3fas (n = 8)
-tourn9.txt|tournaments9.txt|7086832|191536|quick|sec4 hs3fas (n = 9); sec6 triple-local CSP demo
+tourn9.txt|tournaments9.txt|7086832|191536|quick|sec4 hs3fas (n = 9); appendices/margin1_scan.c demo
 rt11.txt|regulartournaments11.txt|68488|1223|quick|sec5 regular n = 11 census (the .RData twin is committed)
-tourn10.txt.gz|tournaments10.txt|447720576|9733056|n10|sec4 Theorem 4.1 (n = 10); sec5 n = 10 census; sec6 ilp10
+tourn10.txt.gz|tournaments10.txt|447720576|9733056|n10|sec4 FAS = HS3 census (n = 10); sec5 n = 10 census
 selfcontourn11.txt|selfconversetournaments11.txt|15678208|279968|selfconverse11|sec4 the six self-converse violators (Figure 4)
 "
 
@@ -158,10 +158,9 @@ How the scripts read them (paths are relative to each section folder):
 
   sec4:  cc -O3 -o hs3fas hs3fas.c && ./hs3fas ../data/mckay/tournaments10.txt 10
   sec5:  Rscript n10_prefilter.R ../data/mckay/tournaments10.txt cand.idx 0
-  sec6:  Rscript ilp10/make_chunks10.R ../data/mckay/tournaments10.txt 10 <outdir> 200
 
-Not downloaded here: nauty's `gentourng` (generates catalogues on the fly for the n = 11
-census) — install it with `brew install nauty` or `apt-get install nauty`.
+Not downloaded here: nauty's `gentourng` (generates catalogues on the fly for whole-catalogue
+scans) — install it with `brew install nauty` or `apt-get install nauty`.
 USAGE
   [ "$SET" = quick ] && printf "\n${D}The order-10 catalogue is a separate, larger download: ./get_data.sh n10${Z}\n"
   exit 0

@@ -110,24 +110,6 @@ check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "
 check "sec5: cA3 not-3-real / 5-real (CP-SAT)" "k=3 (maj>=2): INFEASIBLE (proven)" "python py_ortools" \
       "cd sec5_a3_boundary && python3 independent_realize3_cpsat.py"
 
-echo "${C}== sec6_bounds (bounds on N(k)) ==${Z}"
-check "sec6: counting bounds table (asserts)"  EXIT0 "python" \
-      "cd sec6_bounds && python3 counting_bounds/extended_table1_bounds.py"
-check "sec6: near-regular bijection + bound"   EXIT0 "python" \
-      "cd sec6_bounds && python3 counting_bounds/nearreg_table_bounds.py"
-
-echo "${C}== sec7_paley43 (Paley(43) not 5-realizable => N(5) <= 43) ==${Z}"
-DP43=${TMPDIR:-/tmp}/rc_dp43
-check "sec7: build the dp43 MAS engine"        EXIT0 "cc" \
-      "cd sec7_paley43 && cc -O3 -march=native -pthread -o $DP43 dp43.c"
-HAVE_dp43=$([ -x "$DP43" ] && echo 1 || echo 0)
-check "sec7: certified MAS(7)=14 self-test"    "selftest q=7 PASSED"  "cc dp43" \
-      "cd sec7_paley43 && mkdir -p ${TMPDIR:-/tmp}/st7 && $DP43 selftest 7 ${TMPDIR:-/tmp}/st7"
-check "sec7: certified MAS(11)=35 self-test"   "selftest q=11 PASSED" "cc dp43" \
-      "cd sec7_paley43 && mkdir -p ${TMPDIR:-/tmp}/st11 && $DP43 selftest 11 ${TMPDIR:-/tmp}/st11"
-check "sec7: CP-SAT realizability gauntlet"    "GAUNTLET: PASS"       "python py_ortools" \
-      "cd sec7_paley43 && python3 realize5_cpsat.py --gauntlet"
-
 echo "${C}== appendices (obstacle-dual / LP tools) ==${Z}"
 check "n = 9 obstacles: 59 + 51 classes (exact)" "n9_signed_obstacles_254.tsv: 51/51 classes certified exactly" "python" \
       "cd appendices/obstacle_catalogue && python3 verify_catalogue.py"

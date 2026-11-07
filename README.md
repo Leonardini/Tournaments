@@ -1,24 +1,16 @@
-> **Independent reproduction (2026-07-30).** Every computational claim in this package was
-> re-run on a single laptop, including the Section 7 keystone end to end: the q=43 layer tables rebuilt
-> from scratch, `MAS(Paley43) = 543` certified both ways, the level-≤1 shell enumerated and
-> census-verified at 1,841,303 orbits, and `TRUE_DISJOINT = 0` over all 4,376,325,129 pairs —
-> every published count exact. See **[REPRODUCTION.md](REPRODUCTION.md)** for the claim-by-claim
-> table and experiment log, **[reports/paley43-five-voters/report.md](reports/paley43-five-voters/report.md)**
-> for the illustrated write-up, and **[paley43_five_voters.py](paley43_five_voters.py)** for a
-> tutorial notebook.
->
-> *Note for anyone rebuilding Section 7 on a machine with under ~32 GB of RAM:* run
-> `CHUNKMB=2 ./reproduce_paley43.sh`. The default chunk size puts ~6.4 GB into buffers and peaks
-> near 26 GB at layer 20; `CHUNKMB=2` completed the same layers at ~9 GB.
-
 # Tournaments determined by three and five voters — reproducibility package
 
 Code for the paper *Tournaments determined by three and five voters*
 (L. Chindelevitch and A. Harutyunyan). Every computational claim in the paper has a verifier here,
-organized by section, with a claim → tool manifest further down. Section 9 of the paper describes
-this package. Section and appendix numbers here follow the version submitted to *Mathematical Social
-Sciences*. The independent reproduction ([REPRODUCTION.md](REPRODUCTION.md) and the report) audited the
-earlier arXiv version, 2607.26690, whose Appendix A (the Paley(43) counts) is Appendix F of this one.
+organized by section, with a claim → tool manifest further down.
+
+On 2026-11-07 the two papers were re-split: this one now treats three voters, and the five-voter
+results it used to contain (the counting bounds on N(k), the proof that Paley(43) is not 5-inducible,
+the census of the 11-vertex tournaments and the unit-margin five-voter profiles) moved to the companion
+paper, with their code, to its package
+[TournamentsBeyond5Voters](https://github.com/Leonardini/TournamentsBeyond5Voters). So did the
+independent reproduction of the Paley(43) proof (its `REPRODUCTION.md`, report and notebook); the
+reproduction's experiment branches (`orx/*`) remain in this repository.
 
 ## Getting started
 
@@ -40,13 +32,11 @@ Two ways in:
 - **Check the results fast** — from the repo root, `./check_all.sh` (~1–2 min) runs a quick
   "check the result" step for every section and reports PASS / FAIL. Free tools only: no HPC, no
   downloads, no CPLEX.
-- **Reproduce the keystone end-to-end** — the headline result (Paley(43) is not the majority of five
-  voters, Section 7 ⇒ **N(5) ≤ 43**) rebuilds from one script:
-  `cd sec7_paley43 && ./reproduce_paley43.sh` (details under *Quick start* below).
+- **Rerun a census** — each section's README gives the full computation behind its claims, with the
+  catalogues it reads (see *Data policy*).
 
-The package is source code plus a few small data files (≈ 3 MB).
-Large data — McKay's tournament catalogues, the Paley(43)
-DP layer tables — is not checked in; the scripts regenerate it or download it (see *Data policy*).
+The package is source code plus a few small data files.
+Large data — McKay's tournament catalogues — is not checked in; the scripts regenerate it or download it (see *Data policy*).
 Most claims are cross-checked by two independent engines (e.g. CPLEX *and* OR-Tools CP-SAT, or an ILP
 *and* a solver-free check), and every reported optimum is re-verified in exact rational arithmetic.
 
@@ -57,7 +47,7 @@ uses, and `./check_env.sh` reports exactly what is present on your machine.
 
 | | needed for | install |
 |---|---|---|
-| **C** (`cc -O3`) | the DP / CSP engines and screens | preinstalled (`clang` on macOS, `gcc` on Linux) |
+| **C** (`cc -O3`) | the census and constraint-search engines | preinstalled (`clang` on macOS, `gcc` on Linux) |
 | **Python 3** — `ortools`, `pulp` | the CP-SAT checks and the orbit certificate | `uv sync`, or `pip install -r requirements.txt` |
 | **R** — `igraph`, `lpSolve`, `rcdd`, `gmp` | exact α\*, the certificates, every figure | `Rscript install_r_packages.R` |
 | system libraries — GMP, MPFR | `gmp` and `rcdd` build against them | `brew install gmp mpfr` / `apt-get install libgmp-dev libmpfr-dev` |
@@ -66,14 +56,12 @@ Optional, and only for specific extras — `./check_all.sh` needs none of them:
 
 - [GLPK](https://www.gnu.org/software/glpk/) — `sec5_a3_boundary/alpha_fast.c`, the n = 10 census
   pre-filter (`brew install glpk` / `apt-get install libglpk-dev`).
-- [nauty](https://pallini.di.uniroma1.it/) `gentourng` — the n = 11 census and whole-catalogue scans
+- [nauty](https://pallini.di.uniroma1.it/) `gentourng` — whole-catalogue scans
   (`brew install nauty` / `apt-get install nauty`; the upstream tarball is also fine).
 - [cddlib](https://github.com/cddlib/cddlib) and GMP, under the Python package `pycddlib` — regenerating
   the obstacle catalogue at n = 9 (`brew install cddlib gmp`, then `uv sync --extra obstacles`).
 - The R extras `combinat`, `slam`, `Matrix`, `pracma`, `tidyverse` … cover incidental helpers in
   `appendices/`: `Rscript install_r_packages.R --all`.
-- `matplotlib` (the report's figures) and `marimo` (the tutorial notebook):
-  `uv sync --extra figures --extra notebook`.
 
 Two notes on how little is really required: the obstacle checker
 `appendices/obstacle_catalogue/verify_catalogue.py` needs **only the Python standard library**, and
@@ -86,18 +74,16 @@ handful of CPLEX scripts.
 
 ### CPLEX (optional)
 
-**No headline result needs it.** Paley(43) (Section 7), the N(5) ≥ 12 census (Section 6), FAS = HS₃ (Section 4), and cA3's
-non-3-inducibility (Section 5) all run with just a C compiler and/or free solvers (OR-Tools CP-SAT, PuLP-CBC,
-`lpSolve`, GLPK). Only these eight scripts use IBM CPLEX 22.1 — and the reproducibility ones each have
-a free twin:
+**No headline result needs it.** FAS = HS₃ and cA3's non-3-inducibility run with just a C compiler
+and/or free solvers (OR-Tools CP-SAT, PuLP-CBC, `lpSolve`, GLPK). Only these scripts use IBM CPLEX
+22.1 — and the reproducibility ones each have a free twin:
 
 | CPLEX script | free twin |
 |---|---|
 | `sec5_a3_boundary/reg11_realize3.py` | `independent_realize3_cpsat.py` |
 | `sec5_a3_boundary/n10_realize3.py` | `cpsat_realize3_n10.py` |
 | `sec5_a3_boundary/cert_primal_1068.py` | `cert_orbits_1068.py` |
-| `sec6_bounds/ilp10/solve_ilp10.R`, `ilp10_aggregate.R` | `sec6_bounds/ilp10/verify_5inducible.py` |
-| `appendices/{gen_duals.R, k_realizability_lp.R, minimum_set_cover.R}` | — (appendix computations only) |
+| `appendices/{k_realizability_lp.R, minimum_set_cover.R}` | — (appendix computations only) |
 
 To run the CPLEX scripts, install **IBM ILOG CPLEX Optimization Studio 22.1** (free for academics via
 the [IBM Academic Initiative](https://www.ibm.com/academic)), then add the bindings:
@@ -107,34 +93,18 @@ the [IBM Academic Initiative](https://www.ibm.com/academic)), then add the bindi
 - **R:** `install.packages("Rcplex", configure.args="--with-cplex-dir=<cplex-studio>/cplex")`;
   `cplexAPI` (CRAN archive) builds the same way.
 
-## Quick start — the Paley(43) result (Section 7)
-
-```sh
-cd sec7_paley43 && ./reproduce_paley43.sh
-```
-
-This builds `dp43.c`, `canon_reps.c`, `razor_screen.c`, then runs, in order:
-
-1. **self-tests** — the MAS gauntlet on q = 7, 11 (brute force) and q = 19, 23, 31 (against known values);
-2. the **δ ≤ 2 layer tables**;
-3. the **level-≤ 1 shell** with a census identity check (orbit count must equal 1,841,303);
-4. the **co-backing screen** ⇒ **N(5) ≤ 43**.
-
-Needs ≤ 8 threads, ~5 GB RAM, and ~50 GB scratch disk. `d0_reps.txt` (the δ = 0 orbit representatives)
-is the one committed input; every other table is regenerated.
-
 ## Manifest — claim → verifier
 
-Theorem 2.1 (Section 2, *every minimum FAS is a minimal 3-cycle hitting set*) and Lemma 2.2 (proved in the paper's
-Appendix A) are analytic and need no computation. Everything below does.
+The theorem that every minimum FAS is a minimal 3-cycle hitting set and the symmetrization lemma are
+analytic and need no computation. Everything below does.
 
-### Section 3 — Refuting Conjecture 1 of Milosz–Hamel–Pierrot (`sec3_mhp/`)
+### Refuting Conjecture 1 of Milosz–Hamel–Pierrot (`sec3_mhp/`)
 
 | claim | tool |
 |---|---|
 | Counterexamples 3.1 (m = 7, 9) and 3.2 (m = 5, n = 6): FAS > HS₃, with the minimum-weight FAS found by brute force and the margins verified | `make_family_and_mhp_figs.R` — self-checking; **stops on any mismatch** before plotting |
 
-### Section 4 — Conjecture 2: FAS = HS₃ on 3-inducible tournaments (`sec4_fas_hs3/`)
+### Refuting Conjecture 2: FAS = HS₃ on 3-inducible tournaments (`sec4_fas_hs3/`)
 
 | claim | tool |
 |---|---|
@@ -142,7 +112,7 @@ Appendix A) are analytic and need no computation. Everything below does.
 | Counterexample 4.2: regular T\* on 11 vertices with FAS = 17 > 16 = HS₃ | `make_tstar_figs.R` — self-checks FAS = 17 and HS₃ = 16 (lpSolve) |
 | The six 3-inducible self-converse violators (Figure 4) | `make_conj2_cex_figs.R` — re-checks self-converse and HS₃ < FAS |
 
-### Section 5 — The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
+### The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
 
 cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3, 4, 6}.
 
@@ -157,50 +127,25 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | cA6 (needs **9** voters); the 6-vs-9-voter dichotomy | `cert9.c` |
 | forced-arc reversal counterexamples at n = 10 (Figure 8) | `make_reversal_cex_figs.R` |
 
-### Section 6 — Improved bounds on N(k) (`sec6_bounds/`)
-
-| claim | tool |
-|---|---|
-| N(5) ≥ 12: every tournament on n ≤ 11 is 5-inducible (n = 11 census over D₁₁ = 903,753,248) | `n11_census/` pipeline (`n11_worker.sh`, `n11_aggregate.sh`) driving `triple_local_csp/{margin1_scan.c, cert_m1k5.c}`; independent re-verifier `triple_local_csp/verify_m1k5.c` |
-| every non-3-inducible tournament on n = 8, 9, 10 (96, 17,674, 2,830,464) has a unit-margin five-voter profile, i.e. lies in I₅,₁ | `unit_margin_witnesses/n{8,9}_unit_margin_profiles.txt.xz` (the profiles; n = 10 is regenerated), checked by `unit_margin_witnesses/verify_unit_margin.py`; regenerated by `make_witnesses.sh` |
-| the n ≤ 10 ILP layer (CPLEX; free twin `verify_5inducible.py`) | `ilp10/solve_ilp10.R`, `ilp10/ilp10_aggregate.R`, `ilp10/make_chunks10.R` |
-| triple-local CSP — 3-inducibility as a vertex-triple labelling (~20 µs/tournament; Appendix G.3) | `triple_local_csp/margin1_scan.c` |
-| Proposition 6.1 completion-uniqueness ⇒ N(5) ≤ 39 (regular), ≤ 38 (near-regular) | `counting_bounds/extended_table1_bounds.py`, `counting_bounds/nearreg_table_bounds.py` |
-
-### Section 7 — Paley(43) is not the majority of five voters (`sec7_paley43/`)
-
-Run it via *Quick start* above. The pieces:
-
-- `dp43.c` — certifies MAS(Paley(43)) = 543 (the Appendix E engine);
-- `canon_reps.c` — enumerates the level-≤ 1 shell;
-- `razor_screen.c` — runs the co-backing screen;
-- `realize5_cpsat.py --gauntlet` — validates the CP-SAT 5-inducibility encoder used for auxiliary checks.
-
-Proof write-up: [`PALEY43_NONREALIZABLE.md`](sec7_paley43/PALEY43_NONREALIZABLE.md).
-
 ### Appendices — shared engines and appendix-specific tools (`appendices/`)
 
 | appendix | tool |
 |---|---|
-| B.6 — predictability LP α\* (column generation, exact MAS oracle as separator); obstacle duals (Appendix G.1) | `k_realizability_lp.R` |
-| B.4 — minimum set cover of obstacle classes | `minimum_set_cover.R` |
-| B.7 — triangle-packing dual certificates on Paley(43) | `gen_duals.R` |
+| the predictability LP α\* (column generation, exact MAS oracle as separator); obstacle duals | `k_realizability_lp.R` |
+| minimum set cover of obstacle classes | `minimum_set_cover.R` |
 | The catalogue of minimal obstacles at n = 9 (all minimal supports, exactly; α\* of all 17,674), its minimum covers, and drawings of the two containment covers | `obstacle_catalogue/` (its own README) |
 | The figure of G₈ and G₉ (G₉ is class `O02` of the catalogue; each checked to be Eulerian with 3n − 4 arcs before drawing) | `../sec3_mhp/make_family_and_mhp_figs.R` |
-| E — MAS engine: weighted Held–Karp oracle (n ≤ 16) | `hk_oracle.c` |
-| G.4 — forced-arc reversal dichotomy | `reversal_check.c` |
+| exact weighted MAS: Held–Karp oracle (n ≤ 16) | `hk_oracle.c` |
+| 3-inducibility as a labelling of the vertex triples, the engine of the census table (~20 µs/tournament) | `margin1_scan.c` |
+| forced-arc reversal dichotomy | `reversal_check.c` |
 
 The infinite obstacle family (a forthcoming companion paper) is **not** included here.
 
 ## Data policy
 
-No large data is committed — scripts regenerate it (`reproduce_paley43.sh` rebuilds every DP table) or
-read McKay catalogues you download. Two small inputs are the exceptions, kept in the repo:
-`sec7_paley43/d0_reps.txt` (2.2 MB, the δ = 0 orbit-representative seed) and
-`data/regulartournaments11.RData` (40 KB, the 1,223 regular 11-vertex tournaments the cA3 scripts read).
-The unit-margin witnesses for n = 8 and 9 in `sec6_bounds/unit_margin_witnesses/` (about 260 KB) are
-also kept, so that they can be checked without being searched for again; the n = 10 file (40 MB) is
-regenerated by `make_witnesses.sh` in about 6 minutes.
+No large data is committed — the scripts read McKay catalogues you download. One small input is the
+exception, kept in the repo: `data/regulartournaments11.RData` (40 KB, the 1,223 regular 11-vertex
+tournaments the cA3 scripts read).
 
 `appendices/obstacle_catalogue/n9_minimal_obstacles.tsv` (15 KB) is the catalogue of minimal obstacles
 at n = 9: the 59 isomorphism classes of inclusion-minimal supports of optimal duals of the predictability
@@ -227,18 +172,16 @@ download is caught here rather than halfway through a census.
 ```
 
 Nothing in `./check_all.sh` needs any of it; the downloads are for the full censuses
-(`hs3fas` at n = 10, the sec5 n = 10 census, `ilp10`). Source and provenance:
+(`hs3fas` at n = 10 and the sec5 n = 10 census). Source and provenance:
 Brendan McKay's digraph archive, <https://users.cecs.anu.edu.au/~bdm/data/digraphs.html>.
 
 ## Layout
 
 ```
-sec3_mhp/          Section 3  MHP Conjecture 1 counterexamples
-sec4_fas_hs3/      Section 4  Conjecture 2 (FAS = HS₃): n ≤ 10 census + T*
-sec5_a3_boundary/  Section 5  A(3) threshold on the boundary: cA3, censuses, cA6
-sec6_bounds/       Section 6  bounds on N(k): n = 11 census, ILP, counting, unit-margin witnesses
-sec7_paley43/      Section 7  Paley(43), end-to-end from one script
-appendices/        shared engines + appendix-specific tools (B, E, G)
+sec3_mhp/          MHP Conjecture 1 counterexamples
+sec4_fas_hs3/      MHP Conjecture 2 (FAS = HS₃): n ≤ 10 census + T*
+sec5_a3_boundary/  A(3) threshold on the boundary: cA3, censuses, cA6
+appendices/        shared engines + appendix-specific tools
 common/  data/     shared α* oracle and progress helper; the few committed data inputs
 
 check_env.sh          is this machine ready? (never runs a check — only reports)

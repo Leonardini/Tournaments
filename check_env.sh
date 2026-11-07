@@ -63,7 +63,7 @@ record R      "$([ -n "$R_V"  ] && echo 1 || echo 0)" "$R_V"           "R"      
 
 # ---- Python packages -----------------------------------------------------------------
 # name:import-path — one interpreter start for all of them.
-PY_PROBE="ortools:ortools.sat.python.cp_model pulp:pulp matplotlib:matplotlib marimo:marimo cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
+PY_PROBE="ortools:ortools.sat.python.cp_model pulp:pulp cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
 PY_OUT=""
 if [ -n "$PY_V" ]; then
   PY_OUT=$(python3 - $PY_PROBE 2>/dev/null <<'PYEOF'
@@ -86,10 +86,8 @@ fi
 pyver() { printf '%s\n' "$PY_OUT" | awk -v m="$1" '$1==m {print $2; found=1} END{if(!found) print "-"}'; }
 
 section "Python packages          ${D}uv sync   (or: pip install -r requirements.txt)${Z}"
-v=$(pyver ortools);    record py_ortools    "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "ortools"    "CP-SAT: sec5, sec6, sec7 checks" 1
+v=$(pyver ortools);    record py_ortools    "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "ortools"    "CP-SAT: sec5 checks" 1
 v=$(pyver pulp);       record py_pulp       "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "pulp"       "CBC: sec5 orbit certificate" 1
-v=$(pyver matplotlib); record py_matplotlib "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "matplotlib" "optional: repro/figures/" 0
-v=$(pyver marimo);     record py_marimo     "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "marimo"     "optional: paley43_five_voters.py notebook" 0
 for pk in numpy pycddlib igraph networkx; do
   lab=$pk; [ "$pk" = igraph ] && lab=python-igraph
   v=$(pyver $pk); record py_$pk "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "$lab" "optional: regenerating appendices/obstacle_catalogue  [uv sync --extra obstacles; pycddlib needs cddlib + GMP]" 0
@@ -148,7 +146,7 @@ section "Optional external tools  ${D}nothing below is needed for ./check_all.sh
 record glpk      "$GLPK" "$([ "$GLPK" = 1 ] && echo present)" "GLPK (-lglpk)" \
         "sec5 alpha_fast.c, the n=10 census pre-filter  [brew install glpk / apt-get install libglpk-dev]" 0
 record gentourng "$([ -n "$GENT" ] && echo 1 || echo 0)" "$([ -n "$GENT" ] && echo present)" "nauty gentourng" \
-        "n=11 census, whole-catalogue scans  [brew install nauty / apt-get install nauty]" 0
+        "whole-catalogue scans  [brew install nauty / apt-get install nauty]" 0
 
 # ---- optional CPLEX ------------------------------------------------------------------
 v=$(rver Rcplex);   RCPX=$([ "$v" != - ] && echo 1 || echo 0)
@@ -157,7 +155,7 @@ v3=$(pyver cplex);  PCPX=$([ "$v3" != - ] && echo 1 || echo 0)
 
 section "IBM CPLEX (optional)     ${D}no headline result needs it; every reproducibility script has a free twin${Z}"
 record cplex_r   "$RCPX" "$v"  "Rcplex"      "appendices set cover" 0
-record cplex_api "$RAPI" "$v2" "cplexAPI"    "sec6 ilp10 sweep" 0
+record cplex_api "$RAPI" "$v2" "cplexAPI"    "appendices/HittingSet.R" 0
 record cplex_py  "$PCPX" "$v3" "cplex (py)"  "sec5 primal certificate, n10/reg11 ILPs" 0
 
 # ---- shipped + downloaded data -------------------------------------------------------
@@ -166,8 +164,7 @@ for f in data/regulartournaments11.RData data/n9_obstacle_keys.rds \
          appendices/obstacle_catalogue/n9_minimal_obstacles.tsv \
          appendices/obstacle_catalogue/n9_signed_obstacles_254.tsv \
          appendices/obstacle_catalogue/the1054.txt appendices/obstacle_catalogue/g8set_16620.txt \
-         appendices/obstacle_catalogue/margin1_254.txt \
-         sec7_paley43/d0_reps.txt; do
+         appendices/obstacle_catalogue/margin1_254.txt; do
   [ -s "$f" ] || DATA_OK=0
 done
 MCKAY=$(ls data/mckay/*.txt 2>/dev/null | wc -l | tr -d ' ')

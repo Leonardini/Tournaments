@@ -24,7 +24,7 @@ core <- c(
 
 extras <- c(
   combinat      = "appendices/: permutation helpers",
-  Matrix        = "appendices/, ilp10/: sparse constraint matrices",
+  Matrix        = "appendices/: sparse constraint matrices",
   slam          = "appendices/: sparse triplet matrices for the LP builders",
   pracma        = "appendices/k_realizability_lp.R",
   magrittr      = "appendices/: pipes",

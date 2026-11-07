@@ -1,47 +1,45 @@
 # Appendices — shared engines and appendix-specific tools (`appendices/`)
 
-**What it does.** This folder collects the cross-cutting engine used elsewhere in the
+**What it does.** This folder collects the cross-cutting engines used elsewhere in the
 package and the tools tied to the paper's appendices. `hk_oracle.c` is the shared weighted
-maximum-acyclic-subgraph (MAS) oracle (Appendix E), meant to be compiled into the C tools that
-need it. The R scripts cover the Appendix B computations — the realizability / predictability LP
-that returns α\* together with the edge-dual "obstacle" it certifies (`k_realizability_lp.R`,
-B.6 / obstacle duals), the minimum set cover of obstacle classes (`minimum_set_cover.R`, B.4),
-and a diverse family of triangle-packing dual certificates on Paley(43) for the budget-DP
-complement bound (`gen_duals.R`, listed under B.7). Appendix G is served by the forced-arc
-reversal-dichotomy scanner (`reversal_check.c`, G.2) and by the obstacle catalogue at n = 9
-(`obstacle_catalogue/`, with its own README).
+maximum-acyclic-subgraph (MAS) oracle (the exact weighted MAS of the appendix on integer and linear
+programming formulations), meant to be compiled into the C tools that need it. The R scripts cover
+the formulations of that appendix: the predictability LP that returns α\* together with the edge-dual
+"obstacle" it certifies (`k_realizability_lp.R`) and the minimum set cover of obstacle classes
+(`minimum_set_cover.R`). The obstacle appendix is served by the obstacle catalogue at n = 9
+(`obstacle_catalogue/`, with its own README), the triple-local constraint search that scales the
+3-inducibility census (`margin1_scan.c`), and the forced-arc reversal scanner (`reversal_check.c`).
 
 **Files.**
-- `hk_oracle.c` — weighted Held–Karp MAS oracle for n ≤ 16 (Appendix E); **include, not standalone** (defines `hk_best(...)`, has no `main`).
-- `k_realizability_lp.R` — predictability / realizability LP (α\* via primal, obstacle via edge duals) plus the n = 8/9 obstacle-family analysis (Appendix B.6, obstacle duals G.1); an Rcplex function library, not a self-running script.
-- `minimum_set_cover.R` — minimum set cover of obstacle classes by ILP (Appendix B.4); function library with a small built-in demo, also `source`d by `k_realizability_lp.R`.
-- `gen_duals.R` — builds triangle-packing dual certificates on Paley(43) for the budget-DP complement bound (manifest label B.7).
-- `reversal_check.c` — forced-arc reversal dichotomy scanner over `gentourng` bit-strings (Appendix G.4).
+- `hk_oracle.c` — weighted Held–Karp MAS oracle for n ≤ 16; **include, not standalone** (defines `hk_best(...)`, has no `main`).
+- `k_realizability_lp.R` — predictability / realizability LP (α\* via primal, obstacle via edge duals) plus the n = 8/9 obstacle-family analysis; an Rcplex function library, not a self-running script.
+- `minimum_set_cover.R` — minimum set cover of obstacle classes by ILP; function library with a small built-in demo, also `source`d by `k_realizability_lp.R`.
+- `margin1_scan.c` — decides 3-inducibility, and 3-inducibility with unit margin, as a labelling of the vertex triples (about 20 µs per tournament); the engine of the census table.
+- `reversal_check.c` — forced-arc reversal dichotomy scanner over `gentourng` bit-strings.
 
-**Dependencies.** C (`cc -O3`) for `hk_oracle.c` and `reversal_check.c`; R for the four `.R`
+**Dependencies.** C (`cc -O3`) for `hk_oracle.c`, `margin1_scan.c` and `reversal_check.c`; R for the `.R`
 tools (`Rcplex`, plus `pracma`, `combinat`, `Matrix`, `slam`, `igraph` depending on the script).
 Versions and installation are in the [top-level README](../README.md#environment).
-The three CPLEX-only scripts here are **`gen_duals.R`, `k_realizability_lp.R`, and
-`minimum_set_cover.R`** (all via `Rcplex`); these have **no free-solver twin** — running them
-requires IBM CPLEX 22.1. `hk_oracle.c` and `reversal_check.c` need only a C compiler.
+The CPLEX-only scripts here are **`k_realizability_lp.R` and
+`minimum_set_cover.R`** (both via `Rcplex`); these have **no free-solver twin** — running them
+requires IBM CPLEX 22.1. `hk_oracle.c`, `margin1_scan.c` and `reversal_check.c` need only a C compiler.
 
-Two of the R scripts also `source` sibling files: `gen_duals.R` reads `cert_pool.R` (which
-supplies `paley_adj`), and `k_realizability_lp.R` reads `Utilities.R`, `HittingSet.R`, and
+`k_realizability_lp.R` also `source`s sibling files: `Utilities.R`, `HittingSet.R`, and
 `minimum_set_cover.R`. Of these, only `minimum_set_cover.R` is present in this folder — see the
 run notes below.
 
 **How to run.**
 
 ```sh
-# --- Appendix E: hk_oracle.c is an INCLUDE, never run alone ---
+# --- hk_oracle.c is an INCLUDE, never run alone ---
 # A C tool that needs the MAS oracle does:  #include "hk_oracle.c"
 # then calls  double v = hk_best(W, n, order);   and is built normally, e.g.:
 #   cc -O3 -o some_tool some_tool.c        # some_tool.c #includes hk_oracle.c
 
-# --- Appendix B.4: minimum set cover (built-in 5-set / 5-element demo) ---
+# --- minimum set cover (built-in 5-set / 5-element demo) ---
 Rscript minimum_set_cover.R                        # needs Rcplex
 
-# --- Appendix B.6 / obstacle duals: realizability LP (function library) ---
+# --- predictability LP and obstacle duals (function library) ---
 # It is sourced, then a function is called. Single-tournament use:
 Rscript -e 'source("k_realizability_lp.R"); \
             T <- matrix(c(0,1,1,0, 0,0,1,0, 0,0,0,1, 1,1,0,0), 4, 4, byrow=TRUE); \
@@ -51,13 +49,11 @@ Rscript -e 'source("k_realizability_lp.R"); \
 # main() also needs Utilities.R + HittingSet.R and the Counterexamples/ and
 # Tournaments/ .RData inputs, none of which live in this folder.
 
-# --- Appendix B.7 label: triangle-packing duals on Paley(43) ---
-# Usage: Rscript gen_duals.R <nsolves> <out.rds> [seed]
-Rscript gen_duals.R 100 duals.rds 4343             # needs Rcplex + cert_pool.R
-# NOTE: gen_duals.R does source("cert_pool.R") for paley_adj(); that file is NOT
-# present in this folder, so the script cannot run here as shipped.
+# --- the triple-local census engine ---
+cc -O3 -o margin1_scan margin1_scan.c
+./margin1_scan 9 < ../data/mckay/tournaments9.txt     # tallies on stderr (see the header of margin1_scan.c)
 
-# --- Appendix G.4: forced-arc reversal dichotomy ---
+# --- forced-arc reversal dichotomy ---
 cc -O3 -o reversal_check reversal_check.c
 ./reversal_check 10 < hits.txt                      # n=10 gentourng bit-strings on stdin
 ./reversal_check 10 stats < hits.txt                # add the gained-3-cycles histogram
@@ -83,16 +79,6 @@ cc -O3 -o reversal_check reversal_check.c
   columns and solves an LP per tournament across the n = 8/9 censuses, so runtime scales with
   census size and factorial(n) and can run long. `main()` writes `ObstructionC8.pdf` and
   `Counterexamples/Non3RealisabilitySummary.RData`.
-
-- **`gen_duals.R`** — first prints
-  `[gen_duals] q=43 arcs=903 cyclic-triangles=3311 | panel 40 complements t=21, tau* mean <…>`;
-  then every 10 solves
-  `[  NN] novel: behavior <b>, multiset <m> | recovery mean(bestW/tau*) = <r> (min <r2>)`;
-  and finally `[gen_duals] done: <N> packings -> <out.rds> | final recovery <r>`. It checkpoints
-  `<out.rds>` every 50 solves (complete/loadable at any time). *Approximate:* runtime scales
-  with `<nsolves>` — one continuous max-triangle-packing CPLEX LP (≈ 903 rows, 3311 columns) per
-  solve; no exact per-solve timing is available here, and as shipped it stops immediately for
-  lack of `cert_pool.R`.
 
 - **`reversal_check.c`** — to stdout, one line only for the interesting tournaments:
   `CEX u->v <bitstring>` (a forced-unanimous arc whose reversal stays 3-realizable) or
