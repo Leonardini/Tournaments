@@ -14,11 +14,6 @@
 - `independent_realize3_cpsat.py` — OR-Tools **CP-SAT** (position-var encoding), hardcoded cA3, tests k = 3 and k = 5.
 - `realize3_partition.c` — solver-free: enumerate all 11! backward masks, search for a 3-order partition of the 55 arcs.
 
-*6-order certificate; minimality; orbit-minimality*
-- `cert_primal_1068.py` — **CPLEX** min-cardinality primal 2/3-certificate (fewest certifying orders).
-- `cert_orbits_1068.py` — free (PuLP/CBC): how few C₁₁-orbits a 2/3-certificate can use (k = 1 impossible, k = 2 search).
-- `enum_profiles.c` — enumerate all 11! orders, emit the exact set of C₁₁ orbit-profiles (makes the 2-orbit search rigorous).
-
 *cA3 is 5-inducible; vertex-criticality*
 - `realize_and_delete_ce1068.py` — CP-SAT: explicit 5-voter realization + 3-realizability of the (unique) n = 10 deletion.
 
@@ -40,16 +35,15 @@
 
 *Figures*
 - `make_cA3_fig.R` — Figure 5 (`cA3.pdf`), the circulant drawing; self-checks the six-order 2/3-certificate.
-- `make_reversal_cex_figs.R` — Figure 8, the four n = 10 forced-arc reversal counterexamples.
+- `make_reversal_cex_figs.R` — Figure D.2, the four n = 10 forced-arc reversal counterexamples.
 
 **Dependencies.**
-- **C** (`cc -O3`); GLPK for `alpha_fast.c` (links `-lglpk`). `cert9.c`, `enum_profiles.c`, `realize3_partition.c`, `alpha_fast.c` are standalone (no shared include).
-- **Python 3** with OR-Tools CP-SAT (`ortools`) and PuLP (`pulp`); IBM CPLEX (`cplex`) for the three CPLEX scripts only.
+- **C** (`cc -O3`); GLPK for `alpha_fast.c` (links `-lglpk`). `cert9.c`, `realize3_partition.c`, `alpha_fast.c` are standalone (no shared include).
+- **Python 3** with OR-Tools CP-SAT (`ortools`); IBM CPLEX (`cplex`) for the CPLEX scripts only.
 - **R** with `igraph`, `lpSolve`, `rcdd`, `gmp`. The α\* scripts (`verify_ce1068.R`, `analyze_ce1068.R`, `inmask_alpha.R`, `reg11_alphastar.R`, `batch_verify_alpha_n10.R`) `source` the shared column-generation MAS oracle `alpha_star.R` and load the regular-tournament catalogue `regulartournaments11.RData`; several also write outputs under a `Paley23Decide/` directory. Ensure those inputs are reachable from your run directory.
 - **CPLEX scripts here and their free-solver twins** (so a CPLEX-less user has a full path):
   `reg11_realize3.py` → `independent_realize3_cpsat.py`;
-  `n10_realize3.py` → `cpsat_realize3_n10.py`;
-  `cert_primal_1068.py` → `cert_orbits_1068.py`.
+  `n10_realize3.py` → `cpsat_realize3_n10.py`.
 
 Versions and installation are in the [top-level README](../README.md#environment).
 
@@ -67,12 +61,6 @@ cc -O3 -o realize3_partition realize3_partition.c
 ./realize3_partition                             # solver-free confirmation
 # CPLEX alternative (single-tournament inmask from verify_ce1068.R):
 # python3 reg11_realize3.py Paley23Decide/ce1068_inmask.txt ce1068_realize3.csv
-
-# --- 6-order certificate; minimality / orbit-minimality ---
-python3 cert_orbits_1068.py                      # PuLP/CBC (free) — default
-cc -O3 -o enum_profiles enum_profiles.c && ./enum_profiles
-# CPLEX alternative (min-cardinality primal certificate):
-# python3 cert_primal_1068.py
 
 # --- cA3 is 5-inducible; vertex-criticality ---
 python3 realize_and_delete_ce1068.py
@@ -100,7 +88,7 @@ cc -O3 -o cert9 cert9.c
 
 # --- figures ---
 Rscript make_cA3_fig.R                            # -> cA3.pdf (Figure 5)
-Rscript make_reversal_cex_figs.R                  # -> ReversalCEX_{A,B,C,D}.pdf (Figure 8)
+Rscript make_reversal_cex_figs.R                  # -> ReversalCEX_{A,B,C,D}.pdf (Figure D.2)
 ```
 
 **What to expect.** Timings are approximate (single core; none measured here).
@@ -108,8 +96,6 @@ Rscript make_reversal_cex_figs.R                  # -> ReversalCEX_{A,B,C,D}.pdf
 - **cA3 structure (`verify_ce1068.R`, `analyze_ce1068.R`, `inmask_alpha.R`)** — a few seconds each (one n = 11 tournament; 2¹¹ DP oracle + exact `rcdd` LP). `verify_ce1068.R` prints `alpha* = 2/3 (0.6666666667) [rcdd status Optimal]`, `certificate re-check: ... TRUE`, `alpha* == 2/3 exactly ? TRUE`, and writes `ce1068_inmask.txt`. `analyze_ce1068.R` prints `|Aut|` (C₁₁), `has an 11-cycle automorphism (=> circulant): TRUE`, `circulant connection set S ... {1, 2, 3, 4, 6}`, `doubly-regular (all==3): TRUE`, and the dual-certificate support, saving `ce1068_analysis.rds`. `inmask_alpha.R` prints one `... alpha* = 2/3 (0.66667) ... [alpha* = 2/3]` line per input tournament.
 
 - **Not-3-inducible, three methods** — `independent_realize3_cpsat.py`: seconds; prints `n=11, arcs=55 ... out-regular deg-5 tournament: OK`, then `k=3 (maj>=2): INFEASIBLE (proven)` and `k=5 (maj>=3): FEASIBLE`. `realize3_partition.c`: a few seconds (measured 1.4 s at `-O3`; it enumerates 11! = 39,916,800 orders, then searches for a partition, printing a two-phase progress line on stderr if either phase runs long); stderr `E=55` + back-count histogram, stdout `NO PARTITION EXISTS => ce1068 is NOT 3-realizable (third, solver-free confirmation).` CPLEX `reg11_realize3.py` on the single inmask returns `NOTREAL=1`.
-
-- **Certificate / minimality** — `cert_orbits_1068.py`: seconds; prints `(1) column generation: ... alpha* = 0.666667`, `arc-orbits under C_11: 5 classes, sizes [11, 11, 11, 11, 11]`, `k=1 feasible in pool? False`, and the k = 2 orbit-pair result (or `No 2-orbit certificate within the pool. => ... minimum is 3 orbits`). `enum_profiles.c`: a few seconds (measured 3.0 s at `-O2`; 11! perms × 55 arcs, with a progress line on stderr if it runs long); stderr `E=55 classes=5` + `perms=39916800 distinct-profiles=3112`, stdout the profile lines. CPLEX `cert_primal_1068.py`: seconds; prints `(3) CPLEX min-cardinality = 6 orders`, `(4) exact min-edge-agreement = 2/3 ... certifies >= 2/3: True; tight edges: 55/55`, then the 6-order minimal certificate.
 
 - **5-inducibility / vertex-criticality (`realize_and_delete_ce1068.py`)** — seconds; prints `(E) full n=11: 5-realizable = True  => McG = 5 (not 3, but 5)`, `verification: arcs with < 3 voters agreeing = 0`, and `(D) delete 1 vertex (n=10 ...): 3-realizable = True` → `VERTEX-CRITICAL for non-3-realizability`.
 

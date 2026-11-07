@@ -48,7 +48,7 @@ uses, and `./check_env.sh` reports exactly what is present on your machine.
 | | needed for | install |
 |---|---|---|
 | **C** (`cc -O3`) | the census and constraint-search engines | preinstalled (`clang` on macOS, `gcc` on Linux) |
-| **Python 3** — `ortools`, `pulp` | the CP-SAT checks and the orbit certificate | `uv sync`, or `pip install -r requirements.txt` |
+| **Python 3** — `ortools` | the CP-SAT checks | `uv sync`, or `pip install -r requirements.txt` |
 | **R** — `igraph`, `lpSolve`, `rcdd`, `gmp` | exact α\*, the certificates, every figure | `Rscript install_r_packages.R` |
 | system libraries — GMP, MPFR | `gmp` and `rcdd` build against them | `brew install gmp mpfr` / `apt-get install libgmp-dev libmpfr-dev` |
 
@@ -75,14 +75,13 @@ handful of CPLEX scripts.
 ### CPLEX (optional)
 
 **No headline result needs it.** FAS = HS₃ and cA3's non-3-inducibility run with just a C compiler
-and/or free solvers (OR-Tools CP-SAT, PuLP-CBC, `lpSolve`, GLPK). Only these scripts use IBM CPLEX
+and/or free solvers (OR-Tools CP-SAT, `lpSolve`, GLPK). Only these scripts use IBM CPLEX
 22.1 — and the reproducibility ones each have a free twin:
 
 | CPLEX script | free twin |
 |---|---|
 | `sec5_a3_boundary/reg11_realize3.py` | `independent_realize3_cpsat.py` |
 | `sec5_a3_boundary/n10_realize3.py` | `cpsat_realize3_n10.py` |
-| `sec5_a3_boundary/cert_primal_1068.py` | `cert_orbits_1068.py` |
 | `appendices/{k_realizability_lp.R, minimum_set_cover.R}` | — (appendix computations only) |
 
 To run the CPLEX scripts, install **IBM ILOG CPLEX Optimization Studio 22.1** (free for academics via
@@ -121,12 +120,12 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 |---|---|
 | cA3 structure and exact α\* = 2/3 (rational, `rcdd`/GMP) | `verify_ce1068.R`, `analyze_ce1068.R`, `inmask_alpha.R` |
 | cA3 not 3-inducible — three independent methods | `reg11_realize3.py` (CPLEX), `independent_realize3_cpsat.py` (CP-SAT), `realize3_partition.c` (solver-free) |
-| 6-order 2/3-certificate; minimality; orbit-minimality | `cert_primal_1068.py`, `cert_orbits_1068.py`, `enum_profiles.c`, `make_cA3_fig.R` |
+| 6-order 2/3-certificate (its minimality is proved by hand in the paper) | `make_cA3_fig.R` (re-checks the certificate before drawing) |
 | cA3 is 5-inducible; vertex-criticality | `realize_and_delete_ce1068.py` |
 | regular n = 11 census (1,223) isolating cA3 | `reg11_alphastar.R`, `reg11_realize3.py` |
 | n = 10 census (9,733,056 → 1,013 counterexamples) | `n10_prefilter.R`, `extract_gidx_inm.py`, `alpha_fast.c`, `n10_realize3.py`, `cpsat_realize3_n10.py`, `batch_verify_alpha_n10.R`, `characterize_n10_ce.R` |
 | cA6 (needs **9** voters); the 6-vs-9-voter dichotomy | `cert9.c` |
-| forced-arc reversal counterexamples at n = 10 (Figure 8) | `make_reversal_cex_figs.R` |
+| forced-arc reversal counterexamples at n = 10 (Figure D.2) | `make_reversal_cex_figs.R` |
 
 ### Appendices — shared engines and appendix-specific tools (`appendices/`)
 

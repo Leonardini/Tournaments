@@ -63,7 +63,7 @@ record R      "$([ -n "$R_V"  ] && echo 1 || echo 0)" "$R_V"           "R"      
 
 # ---- Python packages -----------------------------------------------------------------
 # name:import-path — one interpreter start for all of them.
-PY_PROBE="ortools:ortools.sat.python.cp_model pulp:pulp cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
+PY_PROBE="ortools:ortools.sat.python.cp_model cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
 PY_OUT=""
 if [ -n "$PY_V" ]; then
   PY_OUT=$(python3 - $PY_PROBE 2>/dev/null <<'PYEOF'
@@ -87,7 +87,6 @@ pyver() { printf '%s\n' "$PY_OUT" | awk -v m="$1" '$1==m {print $2; found=1} END
 
 section "Python packages          ${D}uv sync   (or: pip install -r requirements.txt)${Z}"
 v=$(pyver ortools);    record py_ortools    "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "ortools"    "CP-SAT: sec5 checks" 1
-v=$(pyver pulp);       record py_pulp       "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "pulp"       "CBC: sec5 orbit certificate" 1
 for pk in numpy pycddlib igraph networkx; do
   lab=$pk; [ "$pk" = igraph ] && lab=python-igraph
   v=$(pyver $pk); record py_$pk "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "$lab" "optional: regenerating appendices/obstacle_catalogue  [uv sync --extra obstacles; pycddlib needs cddlib + GMP]" 0

@@ -1,5 +1,5 @@
-# Figures for the four n=10 forced-arc reversal counterexamples (manuscript S5,
-# Theorem 5.5).  Vertices labelled 1-10 (manuscript convention); the forced arc
+# Figures for the four n=10 forced-arc reversal counterexamples (manuscript Appendix D.4,
+# Theorem D.3).  Vertices labelled 1-10 (manuscript convention); the forced arc
 # (whose reversal remains 3-inducible) is drawn thick black.  The u/v fields
 # below are 0-based (code convention); labels shown are u+1 -> v+1.
 library(igraph)

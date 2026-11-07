@@ -7,10 +7,9 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 
 # Everything the package's Python scripts import, outside the standard library.
-# Both are free and pip-installable; no headline result needs anything else.
+# It is free and pip-installable; no headline result needs anything else.
 dependencies = [
     "ortools>=9.10",   # CP-SAT: the sec5 realizability checks
-    "pulp>=2.8",       # CBC: the sec5 orbit-minimal certificate
 ]
 
 [project.optional-dependencies]
