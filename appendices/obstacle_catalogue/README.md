@@ -52,8 +52,8 @@ positive (the module docstring has the argument).
 - `covers.py` — minimum covers of the 17,674, and of the 254, by obstacle classes, under containment and
   under the tournaments' own obstacles, solved exactly by CP-SAT (fewest classes, then least total
   multiplicity). It writes the four covers to `covers.tsv`.
-- `draw_covers.R` — draws the classes of the two containment covers: `figures/A_prime.pdf`, the 26 classes
-  that cover the 17,674 (G8 and 25 others), and `figures/B_prime.pdf`, the 25 signed classes that cover
+- `draw_covers.R` — draws the classes of the two containment covers: `figures/A_prime.pdf`, the 25 classes
+  that cover the 17,674 together with G8 (which every cover contains, and which the paper draws separately), and `figures/B_prime.pdf`, the 25 signed classes that cover
   the 254, with one page per class in `figures/A_prime/` and `figures/B_prime/`. An arc is labelled with
   its multiplicity when that is not 1; a red dashed arc has negative weight.
 - Inputs (kept in the repository, 1.6 MB): `the1054.txt`, the 1,054 non-3-inducible 9-tournaments that do

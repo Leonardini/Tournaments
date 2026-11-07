@@ -1,5 +1,6 @@
 # Draws the obstacle classes of the two minimum containment covers in covers.tsv:
-#   A' -- the 26 classes covering the 17,674 non-3-inducible 9-tournaments (G8 and 25 others);
+#   A' -- the 25 classes that, with G8, cover the 17,674 non-3-inducible 9-tournaments (G8, which every cover
+#         contains, has its own figure in the paper: sec3_mhp/make_family_and_mhp_figs.R);
 #   B' -- the 25 signed classes covering the 254 tournaments that are 3-inducible but not with unit margin.
 # A class covers a tournament under containment when the tournament contains the class's arcs.
 #
@@ -72,5 +73,7 @@ coverIds = function(coll) {
 }
 
 dir.create("figures", showWarnings = FALSE)
-drawCover(coverIds("17674"), readClasses("n9_minimal_obstacles.tsv"), "*", "A_prime")
+a = coverIds("17674")
+stopifnot("G8" %in% a)
+drawCover(setdiff(a, "G8"), readClasses("n9_minimal_obstacles.tsv"), "*", "A_prime")
 drawCover(coverIds("254"), readClasses("n9_signed_obstacles_254.tsv"), "=", "B_prime")
