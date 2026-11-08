@@ -1,7 +1,7 @@
 [project]
 name = "tournaments-repro"
 version = "1.0.0"
-description = "Reproducibility package for 'Tournaments determined by three and five voters' (Chindelevitch & Harutyunyan)"
+description = "Reproducibility package for 'Tournaments not inducible by three voters' (Chindelevitch & Harutyunyan)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

@@ -1,6 +1,6 @@
-# Tournaments determined by three and five voters — reproducibility package
+# Tournaments not inducible by three voters — reproducibility package
 
-Code for the paper *Tournaments determined by three and five voters*
+Code for the paper *Tournaments not inducible by three voters*
 (L. Chindelevitch and A. Harutyunyan). Every computational claim in the paper has a verifier here,
 organized by section, with a claim → tool manifest further down.
 
