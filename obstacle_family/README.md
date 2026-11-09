@@ -8,9 +8,15 @@ four have predictability exactly (2n − 3)/(3n − 4). This folder holds:
 | file | content |
 |---|---|
 | `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
-| `lean/` | a proof of Theorem 7.2 in the Lean 4 proof assistant with Mathlib, for every n ≥ 8 |
+| `lean/` | a Lean 4 proof (Mathlib), for every n ≥ 8, of the value (2n − 3)/(3n − 4) for the completions of the paper's previous version (see the status note below) |
 
 ## The Lean proof
+
+> **Status (2026-11-09).** Theorem 7.2 of the current manuscript uses other completions, in which the family
+> member is the only minimal obstacle: along T₂, W₁…W_k, U₁, T₁, T₀, P₁, T₃, P₂, U₂…U_k (even) and
+> N₂, W₁…W_k, N₃, F, H, P₁, P₂, N₁, G, N₀, U₁…U_k (odd). The proof below covers the completions of the
+> previous version, along T₂, W₁…W_k, T₁, T₀, P₁, U₂…U_k, U₁, T₃, P₂ and N₂, W₁…W_k, N₃, F, H, G, N₀, P₁,
+> P₂, N₁, U₁…U_k, and has not yet been regenerated for the new ones.
 
 ```sh
 cd lean && ./install.sh     # elan, the pinned Lean 4.35.0, Mathlib's cache (~5 GB), build, axioms
