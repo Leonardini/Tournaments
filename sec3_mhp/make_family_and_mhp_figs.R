@@ -1,6 +1,7 @@
 # Figures for the v3.0 manuscript:
-#   ObstacleG8 / ObstacleG10 / ObstacleH9 / ObstacleH11 -- the obstacle family
-#     members, drawn in the style of the original ObstructionC8.pdf (organic
+#   ObstacleG8 / ObstacleH9 -- the two smallest members of the obstacle families (Figure 6;
+#     G10 and H11, Figure 7, are drawn by make_family_section_figs.R),
+#     drawn in the style of the original ObstructionC8.pdf (organic
 #     layout, orange vertices, navy labels) but with role-labelled vertices and
 #     arcs coloured by class; the defect 4-cycle is thick red.
 #   MHP_Fig1a / MHP_Fig1b -- weighted majority tournament of Counterexample 3.1
@@ -165,28 +166,13 @@ mkLabels = function(vn) parse(text = ifelse(grepl("[0-9]$", vn),
                               paste0(substr(vn, 1, 1), "[", substr(vn, 2, 3), "]"),
                               paste0("italic(", vn, ")")))
 
-# kk layout -- used for the family members shown only in the companion paper
-# (ObstacleG10, ObstacleH11), which keep their canonical T-/N- vertex names.
-plotFamily = function(arcs, n, fname, seed, legendItems, legendCols) {
-  g = graph_from_data_frame(arcs[, c("from", "to")], directed = TRUE)
-  stopifnot(ecount(g) == 3 * n - 4, vcount(g) == n)
-  stopifnot(all(degree(g, mode = "in") == degree(g, mode = "out")))  # Eulerian
-  ecol = classColor[arcs$class]
-  ewid = ifelse(arcs$class == "defect", 3.5, 1.4)
-  set.seed(seed)
-  plotStyled(g, layout_with_kk(g), mkLabels(V(g)$name), ecol, ewid,
-             rep(1, ecount(g)), fname, legendItems = legendItems,
-             legendCols = legendCols)
-}
-
-# Aligned, core-relabelled layout for the two Figure-6 panels (G8 and H9 = "G9").
-# The four core vertices are relabelled c1..c4 (c1,c2 the two on the defect
-# 4-cycle), and the shared skeleton {c1,c2,c3,c4,P1,P2} is given IDENTICAL
-# coordinates in both panels, so the thick-red defect 4-cycle
-# c1 -> P2 -> c2 -> P1 -> c1 is drawn identically and the panels are exactly
-# aligned on their common part. Family-specific vertices (G8: coset U1,W1;
-# H9: special F,G,H) sit to the right. Cores are non-isomorphic, so c1..c4 is a
-# role labelling, not a vertex isomorphism.
+# Aligned layout for the two Figure-6 panels (G8 and H9), labelled with the vertex names of
+# Section sec:family. The four core vertices play the roles c1..c4 (c1, c2 the two on the
+# defect 4-cycle), and the shared skeleton {c1,c2,c3,c4,P1,P2} is given IDENTICAL coordinates
+# in both panels, so the thick-red defect 4-cycle c1 -> P2 -> c2 -> P1 -> c1 is drawn
+# identically and the panels are exactly aligned on their common part. Family-specific
+# vertices (G8: U1, W1; H9: F, G, H) sit to the right. Cores are non-isomorphic, so c1..c4 is
+# a role assignment for the layout only; the drawn labels are T0..T3 and N0..N3.
 mapG = c(T1 = "c1", T2 = "c2", T0 = "c3", T3 = "c4")
 mapH = c(N0 = "c1", N1 = "c2", N2 = "c3", N3 = "c4")
 relabelArcs = function(arcs, map) {
@@ -210,8 +196,16 @@ allpts = rbind(coordsG8, coordsH9)
 ctr = c((max(allpts[,1]) + min(allpts[,1]))/2, (max(allpts[,2]) + min(allpts[,2]))/2)
 half = 1.12 * max(abs(allpts[,1] - ctr[1]), abs(allpts[,2] - ctr[2]))
 normc = function(M) cbind((M[,1] - ctr[1]) / half, (M[,2] - ctr[2]) / half)
+# back to the section's vertex names: the role c_i of each core vertex only fixes its position
+renameRows = function(M, map) {
+  inv = setNames(names(map), map); r = rownames(M)
+  rownames(M) = ifelse(r %in% names(inv), inv[r], r); M
+}
+coordsG8 = renameRows(coordsG8, mapG)
+coordsH9 = renameRows(coordsH9, mapH)
 
-plotAligned = function(arcs, n, fname, map, coords, legendItems, legendCols) {
+plotAligned = function(arcs, n, fname, map, coords, legendItems, legendCols,
+                       showLegend = TRUE) {
   arcs = relabelArcs(arcs, map)
   g = graph_from_data_frame(arcs[, c("from", "to")], directed = TRUE)
   stopifnot(ecount(g) == 3 * n - 4, vcount(g) == n,
@@ -226,8 +220,11 @@ plotAligned = function(arcs, n, fname, map, coords, legendItems, legendCols) {
        vertex.color = "orange", vertex.label = mkLabels(V(g)$name),
        vertex.label.color = "navy", vertex.label.cex = 1.05, vertex.size = 22,
        edge.color = ecol, edge.width = ewid, edge.arrow.size = 0.5, edge.curved = 0.08)
-  legend("bottomleft", legend = legendItems, col = legendCols, lwd = 3,
-         cex = 0.85, bty = "n", horiz = FALSE)
+  # arc-class legend -- off for the main paper's Figure 6 (showLegend = FALSE);
+  # kept as an option for the companion paper, which labels the arc classes.
+  if (showLegend)
+    legend("bottomleft", legend = legendItems, col = legendCols, lwd = 3,
+           cex = 0.85, bty = "n", horiz = FALSE)
   dev.off()
   cat(fname, "written\n")
 }
@@ -236,13 +233,9 @@ legG   = c("core", "port", "defect 4-cycle", "coset (block)", "zigzag", "termina
 colG   = classColor[c("core", "port", "defect", "block", "zigzag", "terminal")]
 legH9  = c("core", "port", "defect 4-cycle", "coset (special)", "zigzag")
 colH9  = classColor[c("core", "port", "defect", "special", "zigzag")]
-legH11 = c("core", "port", "defect 4-cycle", "block", "zigzag", "special")
-colH11 = classColor[c("core", "port", "defect", "block", "zigzag", "special")]
 
-plotAligned(familyG(1), 8, "ObstacleG8.pdf", mapG, coordsG8, legG, colG)
-plotAligned(familyH(0), 9, "ObstacleH9.pdf", mapH, coordsH9, legH9, colH9)
-plotFamily(familyG(2), 10, "ObstacleG10.pdf", 11, legG,   colG)
-plotFamily(familyH(1), 11, "ObstacleH11.pdf", 3, legH11, colH11)
+plotAligned(familyG(1), 8, "ObstacleG8.pdf", character(0), coordsG8, legG, colG, showLegend = FALSE)
+plotAligned(familyH(0), 9, "ObstacleH9.pdf", character(0), coordsH9, legH9, colH9, showLegend = FALSE)
 
 ## ---------- Counterexample 3.1 (Figure 1a, 1b) ----------
 

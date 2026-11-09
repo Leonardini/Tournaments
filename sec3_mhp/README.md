@@ -29,9 +29,9 @@ Rscript make_family_and_mhp_figs.R
 
 - `make_family_and_mhp_figs.R` — approximately a few seconds (brute force is at most 24 vertex
   orders for the n = 4 tournaments and 720 for the n = 6 tournament; the rest is `igraph`
-  rendering of seven small PDFs, two using a force-directed `layout_with_kk`). It writes seven
-  PDFs to the working directory: `ObstacleG8.pdf`, `ObstacleH9.pdf`, `ObstacleG10.pdf`,
-  `ObstacleH11.pdf` (obstacle family), and `MHP_Fig1a.pdf`, `MHP_Fig1b.pdf`, `MHP_Fig2.pdf`
+  rendering of five small PDFs). It writes five
+  PDFs to the working directory: `ObstacleG8.pdf`, `ObstacleH9.pdf` (the two smallest members of the obstacle families;
+  `../obstacle_family/make_family_section_figs.R` draws the next two), and `MHP_Fig1a.pdf`, `MHP_Fig1b.pdf`, `MHP_Fig2.pdf`
   (the Section 3 counterexamples). Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
   The counterexample self-checks print, for the two Figure-1 panels,
   `MHP_Fig1a.pdf : min-weight FAS value <v> | optimal sets: 2` and

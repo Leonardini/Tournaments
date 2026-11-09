@@ -132,7 +132,7 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | claim | tool |
 |---|---|
 | Theorem 7.2: for every n ≥ 8, G_n or H_n and its completion have predictability exactly (2n − 3)/(3n − 4); so every (2t − 1)/(3t − 1) with t ≥ 7 is a predictability | `lean/` — a Lean 4 proof (Mathlib), for every n; build and axiom check in its README |
-| The figure of G₁₀ and H₁₁ with their arc classes | `make_family_section_figs.R` (checks arc counts and the Eulerian property before drawing) |
+| The figure of G₁₀ and H₁₁ with their arc classes | `make_family_section_figs.R` (checks arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing) |
 
 ### Appendices — shared engines and appendix-specific tools (`appendices/`)
 

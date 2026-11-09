@@ -1,8 +1,9 @@
 # Figure fig:family of paper 1 (Section sec:family): the obstacles G_10 and H_11, coloured by the
 # arc classes the section defines -- arcs of the zigzag path, arcs at the two hubs, the defect
-# 4-cycle, and the other arcs.  Same vertex/arc lists and kk layouts (seeds 11 and 3) as
-# make_family_and_mhp_figs.R, so only the colours change.  Writes into the directory it is run from.
-# The arc counts, the Eulerian property and the class sizes are checked before plotting.
+# 4-cycle, and the other arcs.  Same vertex/arc lists as make_family_and_mhp_figs.R; Kamada-Kawai
+# layouts from seeded random starts (seeds 43 and 134), chosen so that no arc passes through a
+# vertex other than its ends.  Writes into the directory it is run from.  The arc counts, the
+# Eulerian property, the class sizes and that clearance are checked before plotting.
 library(igraph)
 
 familyG = function(k) {  # G_n, n = 6 + 2k
@@ -52,6 +53,22 @@ mkLabels = function(vn) parse(text = ifelse(grepl("[0-9]$", vn),
                               paste0(substr(vn, 1, 1), "[", substr(vn, 2, 3), "]"),
                               paste0("italic(", vn, ")")))
 
+# Smallest distance, in plot units (igraph rescales the layout to [-1, 1]), between a vertex centre
+# and an arc not incident to it.  A vertex of size 22 has radius 0.11 in these units, so an arc
+# closer than that is drawn through the vertex.
+vertexRadius = 22 / 200
+clearance = function(g, lay) {
+  L = norm_coords(lay); E = as_edgelist(g, names = FALSE); best = Inf
+  for (e in seq_len(nrow(E))) {
+    a = L[E[e, 1], ]; d = L[E[e, 2], ] - a
+    for (v in setdiff(seq_len(nrow(L)), E[e, ])) {
+      t = max(0, min(1, sum((L[v, ] - a) * d) / sum(d * d)))
+      best = min(best, sqrt(sum((L[v, ] - a - t * d)^2)))
+    }
+  }
+  best
+}
+
 plotSection = function(arcs, n, fname, seed, nPath, nHub) {
   g = graph_from_data_frame(arcs[, c("from", "to")], directed = TRUE)
   stopifnot(ecount(g) == 3 * n - 4, vcount(g) == n,
@@ -59,7 +76,10 @@ plotSection = function(arcs, n, fname, seed, nPath, nHub) {
             sum(arcs$class == "path") == nPath, sum(arcs$class == "defect") == 4,
             sum(arcs$class == "hub") == nHub)
   set.seed(seed)
-  lay = layout_with_kk(g)
+  lay = layout_with_kk(g, coords = matrix(runif(2 * vcount(g)), ncol = 2))
+  cl = clearance(g, lay)
+  if (cl <= vertexRadius)
+    stop(sprintf("%s: an arc passes through a vertex (clearance %.3f <= radius %.3f)", fname, cl, vertexRadius))
   pdf(fname, width = 6.5, height = 6.5)
   par(mar = c(1.6, 0.5, 0.5, 0.5), xpd = NA)
   plot(g, layout = lay, vertex.color = "orange", vertex.label = mkLabels(V(g)$name),
@@ -74,7 +94,7 @@ plotSection = function(arcs, n, fname, seed, nPath, nHub) {
 
 k = 2  # G_10: path T0 U1 W1 U2 W2 T3, hubs T1 T2
 aG = sectionClasses(familyG(k), c("T1", "T2"), c("T0", "T3", paste0("U", 1:k), paste0("W", 1:k)))
-plotSection(aG, 10, "ObstacleG10.pdf", 11, 2 * k + 1, 4 * k + 4)
+plotSection(aG, 10, "ObstacleG10.pdf", 43, 2 * k + 1, 4 * k + 4)
 k = 1  # H_11: path P1 W1 U1 H, hubs N1 N2; the hub arc N1 -> P1 is on the defect 4-cycle
 aH = sectionClasses(familyH(k), c("N1", "N2"), c("P1", "H", paste0("U", 1:k), paste0("W", 1:k)))
-plotSection(aH, 11, "ObstacleH11.pdf", 3, 2 * k + 1, 4 * k + 4 - 1)
+plotSection(aH, 11, "ObstacleH11.pdf", 134, 2 * k + 1, 4 * k + 4 - 1)

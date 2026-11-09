@@ -7,7 +7,7 @@ four have predictability exactly (2n − 3)/(3n − 4). This folder holds:
 
 | file | content |
 |---|---|
-| `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts and the Eulerian property before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
+| `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
 | `lean/` | a proof of Theorem 7.2 in the Lean 4 proof assistant with Mathlib, for every n ≥ 8 |
 
 ## The Lean proof
