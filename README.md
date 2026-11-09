@@ -127,6 +127,13 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | cA6 (needs **9** voters); the 6-vs-9-voter dichotomy | `cert9.c` |
 | forced-arc reversal counterexamples at n = 10 (Figure D.2) | `make_reversal_cex_figs.R` |
 
+### Obstacles at every order (`obstacle_family/`)
+
+| claim | tool |
+|---|---|
+| Theorem 7.2: for every n ≥ 8, G_n or H_n and its completion have predictability exactly (2n − 3)/(3n − 4); so every (2t − 1)/(3t − 1) with t ≥ 7 is a predictability | `lean/` — a Lean 4 proof (Mathlib), for every n; build and axiom check in its README |
+| The figure of G₁₀ and H₁₁ with their arc classes | `make_family_section_figs.R` (checks arc counts and the Eulerian property before drawing) |
+
 ### Appendices — shared engines and appendix-specific tools (`appendices/`)
 
 | appendix | tool |
@@ -134,12 +141,10 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | the predictability LP α\* (column generation, exact MAS oracle as separator); obstacle duals | `k_realizability_lp.R` |
 | minimum set cover of obstacle classes | `minimum_set_cover.R` |
 | The catalogue of minimal obstacles at n = 9 (all minimal supports, exactly; α\* of all 17,674), its minimum covers, and drawings of the two containment covers | `obstacle_catalogue/` (its own README) |
-| The figure of G₈ and G₉ (G₉ is class `O02` of the catalogue; each checked to be Eulerian with 3n − 4 arcs before drawing) | `../sec3_mhp/make_family_and_mhp_figs.R` |
+| The figure of G₈ and H₉ (H₉ is class `O02` of the catalogue; each checked to be Eulerian with 3n − 4 arcs before drawing) | `../sec3_mhp/make_family_and_mhp_figs.R` |
 | exact weighted MAS: Held–Karp oracle (n ≤ 16) | `hk_oracle.c` |
 | 3-inducibility as a labelling of the vertex triples, the engine of the census table (~20 µs/tournament) | `margin1_scan.c` |
 | forced-arc reversal dichotomy | `reversal_check.c` |
-
-The infinite obstacle family (a forthcoming companion paper) is **not** included here.
 
 ## Data policy
 
@@ -181,6 +186,7 @@ Brendan McKay's digraph archive, <https://users.cecs.anu.edu.au/~bdm/data/digrap
 sec3_mhp/          MHP Conjecture 1 counterexamples
 sec4_fas_hs3/      MHP Conjecture 2 (FAS = HS₃): n ≤ 10 census, T*, regular n = 11
 sec5_a3_boundary/  A(3) threshold on the boundary: cA3, censuses, cA6
+obstacle_family/   obstacles at every order: the Lean proof of the family's value, its figure
 appendices/        shared engines + appendix-specific tools
 common/  data/     shared α* oracle and progress helper; the few committed data inputs
 

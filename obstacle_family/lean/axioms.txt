@@ -1,0 +1,8 @@
+'Tsigma.Even.value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Even.value_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Odd.value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Odd.value_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Even.tarc_total' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Even.tarc_asymm' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Odd.tarc_total' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Tsigma.Odd.tarc_asymm' depends on axioms: [propext, Classical.choice, Quot.sound]
