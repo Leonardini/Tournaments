@@ -5,8 +5,12 @@ Only Lean's standard axioms (`propext`, `Classical.choice`, `Quot.sound`) may ap
 
 #print axioms Tsigma.Even.value
 #print axioms Tsigma.Even.value_exact
+#print axioms Tsigma.Even.bob_strict
+#print axioms Tsigma.Even.unique
 #print axioms Tsigma.Odd.value
 #print axioms Tsigma.Odd.value_exact
+#print axioms Tsigma.Odd.bob_strict
+#print axioms Tsigma.Odd.unique
 #print axioms Tsigma.Even.tarc_total
 #print axioms Tsigma.Even.tarc_asymm
 #print axioms Tsigma.Odd.tarc_total

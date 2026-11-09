@@ -79,6 +79,43 @@ theorem famsum_interval {f : ℕ → V → ℕ} {m : ℕ} {x y : V} (a b : ℕ)
     rw [this, Finset.card_empty]
     omega
 
+/-- A family's count is the complement of an interval length when the members that reverse the arc
+are those outside the interval `[a, b)` of the index range `[0, m)`. -/
+theorem famsum_cointerval {f : ℕ → V → ℕ} {m : ℕ} {x y : V} (a b : ℕ)
+    (h : ∀ t, t < m → (f t y < f t x ↔ ¬ (a ≤ t ∧ t < b))) (hb : a < b → b ≤ m) :
+    famsum f m x y = m - (b - a) := by
+  rw [famsum_eq_card]
+  have hsplit := Finset.card_filter_add_card_filter_not (s := Finset.range m)
+    (fun t => f t y < f t x)
+  rw [Finset.card_range] at hsplit
+  have hc : ((Finset.range m).filter (fun t => ¬ f t y < f t x)).card = b - a := by
+    by_cases hab : a < b
+    · have : (Finset.range m).filter (fun t => ¬ f t y < f t x) = Finset.Ico a b := by
+        ext t
+        simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
+        constructor
+        · rintro ⟨h1, h2⟩
+          by_contra hn
+          exact h2 ((h t h1).2 hn)
+        · rintro ⟨h1, h2⟩
+          have := hb hab
+          exact ⟨by omega, fun hr => (h t (by omega)).1 hr ⟨h1, h2⟩⟩
+      rw [this, Nat.card_Ico]
+    · have : (Finset.range m).filter (fun t => ¬ f t y < f t x) = ∅ := by
+        ext t
+        simp only [Finset.mem_filter, Finset.mem_range, Finset.notMem_empty, iff_false, not_and,
+          not_not]
+        intro h1
+        exact (h t h1).2 (fun ⟨h2, h3⟩ => hab (by omega))
+      rw [this, Finset.card_empty]
+      omega
+  omega
+
+theorem sum_map_range_const (m w : ℕ) : ((List.range m).map (fun _ => w)).sum = m * w := by
+  induction m with
+  | zero => simp
+  | succ m ih => rw [List.range_succ, List.map_append, List.sum_append, ih]; simp; ring
+
 theorem sum_map_range_one (m : ℕ) : ((List.range m).map (fun _ => (1 : ℕ))).sum = m := by
   induction m with
   | zero => simp

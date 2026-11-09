@@ -16,3 +16,5 @@ rev = "v4.35.0"
 
 [[lean_lib]]
 name = "TsigmaProof"
+# one thread per Lean process; a clean build measured at most 7 Lean processes, 7 cores and 12.8 GB at once
+moreLeanArgs = ["-j1"]
