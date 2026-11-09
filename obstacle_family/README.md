@@ -8,7 +8,23 @@ four have predictability exactly (2n − 3)/(3n − 4). This folder holds:
 | file | content |
 |---|---|
 | `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
+| `check_family_appendix.py` | checks the tables of Appendix F, which the proof of Theorem 7.2 uses, against the definitions of Section 7.1, for k ≤ 25 (see below) |
+| `family_tables.md` | the tables of Appendix F and the two completion orders of Section 7.2, extracted mechanically from the manuscript; `check_family_appendix.py` reads them |
 | `lean/` | a Lean 4 proof (Mathlib), for every n ≥ 8, of the value (2n − 3)/(3n − 4) for the completions of the paper's previous version (see the status note below) |
+
+## Checking the tables of Appendix F
+
+```sh
+FAMILY_MD=family_tables.md python3 check_family_appendix.py      # a few seconds, standard library only
+```
+
+The script rebuilds G_n, H_n and their completions from the definitions of Section 7.1 and, for every
+k ≤ 25 (an optional argument changes this bound), checks each table of Appendix F against them: the double
+cover, the loads of the weighted orders in the strict certificates, the optimal Bob
+strategy for G_n and its moves, the relations between the arcs of H_n, and the orders for n = 8 and 9.
+Appendix F explains why the entries hold for every k; for the smallest k, where it says the loads are
+checked directly, this script is that check. Any failure stops it with an error naming the table, the row
+and k; it ends with `ALL CHECKS PASS`.
 
 ## The Lean proof
 
