@@ -4,9 +4,10 @@
 #     drawn in the style of the original ObstructionC8.pdf (organic
 #     layout, orange vertices, navy labels) but with role-labelled vertices and
 #     arcs coloured by class; the defect 4-cycle is thick red.
-#   MHP_Fig1a / MHP_Fig1b -- weighted majority tournament of Counterexample 3.1
-#     (m = 7 and m = 9), weights on arcs, minimum-weight FASs highlighted.
-#   MHP_Fig2 -- weighted majority tournament of Counterexample 3.2 (m = 5,
+#   MHP_Fig1 -- weighted majority tournament of Counterexample cex:weak-strong for both
+#     m = 7 and m = 9 (they differ only in the margin of 3 > 4, labelled "3 (5)"),
+#     minimum-weight FASs highlighted (Figure fig:mhp, panel a).
+#   MHP_Fig2 -- weighted majority tournament of Counterexample cex:strong-m5 (m = 5,
 #     n = 6), unique minimum-weight FAS highlighted, e = (4,2) thick red.
 # Every FAS/margin claim drawn here is re-verified by brute force before
 # plotting; the script stops on any mismatch.
@@ -30,7 +31,14 @@ plotStyled = function(g, layout, labels, ecol, ewid, elty, fname, elabels = NULL
        edge.arrow.size = arrowSize, edge.curved = curved)
   if (!is.null(labelPos)) {
     # weight labels off the arcs, on white discs so they never blend into a line
-    points(labelPos[, 1], labelPos[, 2], pch = 21, col = NA, bg = "white", cex = 2.9)
+    long = nchar(as.character(elabels)) > 1
+    points(labelPos[!long, 1], labelPos[!long, 2], pch = 21, col = NA, bg = "white", cex = 2.9)
+    if (any(long)) {
+      w = strwidth(elabels[long], cex = 1.1) / 2 + 0.03
+      h = strheight("0", cex = 1.1) / 2 + 0.04
+      rect(labelPos[long, 1] - w, labelPos[long, 2] - h, labelPos[long, 1] + w,
+           labelPos[long, 2] + h, col = "white", border = NA)
+    }
     text(labelPos[, 1], labelPos[, 2], elabels, cex = 1.1)
   }
   if (!is.null(legendItems)) {
@@ -237,37 +245,38 @@ colH9  = classColor[c("core", "port", "defect", "special", "zigzag")]
 plotAligned(familyG(1), 8, "ObstacleG8.pdf", character(0), coordsG8, legG, colG, showLegend = FALSE)
 plotAligned(familyH(0), 9, "ObstacleH9.pdf", character(0), coordsH9, legH9, colH9, showLegend = FALSE)
 
-## ---------- Counterexample 3.1 (Figure 1a, 1b) ----------
+## ---------- Counterexample cex:weak-strong (Figure fig:mhp, panel a) ----------
 
+# Seven voters (3, 2, 2) and nine voters (4, 3, 2) give the same tournament T_1 with the same
+# margins except on 3 > 4 (3 and 5); one drawing shows both, the nine-voter margin in parentheses.
 voters = list(c(2, 3, 4, 1), c(1, 3, 4, 2), c(4, 1, 2, 3))
-for (case in list(list(mult = c(3, 2, 2), fname = "MHP_Fig1a.pdf",
-                       nsets = 2, unique = FALSE),
-                  list(mult = c(4, 3, 2), fname = "MHP_Fig1b.pdf",
-                       nsets = 1, unique = TRUE))) {
-  wm = weightedMajority(voters, case$mult, 4)
-  # the majority tournament must be T_1 regardless of multiplicities
-  stopifnot(arcKey(wm$edges) ==
-            arcKey(rbind(c(1,2), c(2,3), c(3,4), c(4,1), c(1,3), c(4,2))))
-  res = bruteMinFAS(wm$edges, wm$weights, 4)
-  target = arcKey(rbind(c(1,2), c(1,3), c(4,2)))
-  stopifnot(length(res$sets) == case$nsets, target %in% res$sets)
-  if (!case$unique) stopifnot("3>4" %in% res$sets)
-  cat(case$fname, ": min-weight FAS value", res$value,
-      "| optimal sets:", length(res$sets), "\n")
-  g = graph_from_edgelist(wm$edges, directed = TRUE)
-  key = paste(wm$edges[, 1], wm$edges[, 2], sep = ">")
-  ecol = rep("gray55", ecount(g)); ewid = rep(1.6, ecount(g))
-  elty = rep(1, ecount(g))
-  ecol[key %in% c("1>2", "1>3", "4>2")] = "black"
-  ewid[key %in% c("1>2", "1>3", "4>2")] = 3.5
-  if (!case$unique) elty[key == "3>4"] = 2   # the tied alternative FAS, dashed
-  lay = layout_in_circle(g)
-  plotStyled(g, lay, 1:4, ecol, ewid, elty, case$fname,
-             elabels = wm$weights, vsize = 20, arrowSize = 0.85, curved = 0,
-             labelPos = edgeLabelPos(lay, wm$edges))
-}
+T1 = arcKey(rbind(c(1,2), c(2,3), c(3,4), c(4,1), c(1,3), c(4,2)))
+target = arcKey(rbind(c(1,2), c(1,3), c(4,2)))
+wm7 = weightedMajority(voters, c(3, 2, 2), 4)
+wm9 = weightedMajority(voters, c(4, 3, 2), 4)
+stopifnot(arcKey(wm7$edges) == T1, arcKey(wm9$edges) == T1)
+key7 = paste(wm7$edges[, 1], wm7$edges[, 2], sep = ">")
+key9 = paste(wm9$edges[, 1], wm9$edges[, 2], sep = ">")
+w9 = wm9$weights[match(key7, key9)]
+stopifnot(identical(which(wm7$weights != w9), which(key7 == "3>4")))   # the only margin that differs
+res7 = bruteMinFAS(wm7$edges, wm7$weights, 4)
+res9 = bruteMinFAS(wm9$edges, wm9$weights, 4)
+stopifnot(length(res7$sets) == 2, target %in% res7$sets, "3>4" %in% res7$sets,
+          length(res9$sets) == 1, res9$sets == target)
+cat("MHP_Fig1: seven voters, min-weight FAS value", res7$value, "| optimal sets:", length(res7$sets),
+    "; nine voters, value", res9$value, "| optimal sets:", length(res9$sets), "\n")
+g = graph_from_edgelist(wm7$edges, directed = TRUE)
+ecol = rep("gray55", ecount(g)); ewid = rep(1.6, ecount(g)); elty = rep(1, ecount(g))
+ecol[key7 %in% c("1>2", "1>3", "4>2")] = "black"
+ewid[key7 %in% c("1>2", "1>3", "4>2")] = 3.5
+elty[key7 == "3>4"] = 2   # the alternative minimum-weight FAS of the seven-voter profile, dashed
+labs = ifelse(wm7$weights == w9, as.character(wm7$weights), paste0(wm7$weights, " (", w9, ")"))
+lay = layout_in_circle(g)
+plotStyled(g, lay, 1:4, ecol, ewid, elty, "MHP_Fig1.pdf",
+           elabels = labs, vsize = 20, arrowSize = 0.85, curved = 0,
+           labelPos = edgeLabelPos(lay, wm7$edges))
 
-## ---------- Counterexample 3.2 (Figure 2) ----------
+## ---------- Counterexample cex:strong-m5 (Figure fig:mhp, panel b) ----------
 
 voters6 = list(c(2, 5, 3, 6, 1, 4), c(1, 4, 3, 6, 2, 5),
                c(4, 5, 3, 6, 1, 2), c(6, 1, 4, 2, 5, 3))

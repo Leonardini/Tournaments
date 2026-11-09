@@ -29,13 +29,14 @@ Rscript make_family_and_mhp_figs.R
 
 - `make_family_and_mhp_figs.R` — approximately a few seconds (brute force is at most 24 vertex
   orders for the n = 4 tournaments and 720 for the n = 6 tournament; the rest is `igraph`
-  rendering of five small PDFs). It writes five
+  rendering of four small PDFs). It writes four
   PDFs to the working directory: `ObstacleG8.pdf`, `ObstacleH9.pdf` (the two smallest members of the obstacle families;
-  `../obstacle_family/make_family_section_figs.R` draws the next two), and `MHP_Fig1a.pdf`, `MHP_Fig1b.pdf`, `MHP_Fig2.pdf`
-  (the Section 3 counterexamples). Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
-  The counterexample self-checks print, for the two Figure-1 panels,
-  `MHP_Fig1a.pdf : min-weight FAS value <v> | optimal sets: 2` and
-  `MHP_Fig1b.pdf : min-weight FAS value <v> | optimal sets: 1`, and for Figure 2
+  `../obstacle_family/make_family_section_figs.R` draws the next two), and `MHP_Fig1.pdf`, `MHP_Fig2.pdf`, the two
+  panels of the figure of the counterexamples to Conjecture 1 of Milosz et al. Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
+  Panel (a) shows the four-vertex counterexample for both seven and nine voters, which differ only in the
+  margin of the arc 3 → 4 (labelled "3 (5)"); its self-check prints
+  `MHP_Fig1: seven voters, min-weight FAS value <v> | optimal sets: 2 ; nine voters, value <v> | optimal sets: 1`,
+  and panel (b) prints
   `MHP_Fig2: unique min-weight FAS confirmed, value <v>`. Because every FAS/margin claim is
   guarded by `stopifnot` before plotting (the majority tournament must match the paper's, and the
   brute-force optimum must have the expected value, count of tied optimal sets, and specific
