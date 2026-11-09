@@ -32,6 +32,8 @@
 
 *cA6 — the 6-vs-9-voter dichotomy*
 - `cert9.c` — decide existence of a 9-voter 2/3-certificate (CSP; cA6 needs 9 voters).
+- `cA6_profiles.txt` — two profiles of cA6: a 9-voter profile of 8 types at the 2/3 threshold, and a majority-of-5 inducing profile (Appendix C.3 of the paper).
+- `verify_cA6_profiles.py` — checks both profiles with the standard library only: they induce the same self-converse tournament, and in the 9-voter profile every arc has at least 6 of the 9 voters behind it.
 
 *Figures*
 - `make_cA3_fig.R` — Figure 5 (`cA3.pdf`), the circulant drawing; self-checks the six-order 2/3-certificate.

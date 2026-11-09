@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""check_family_appendix.py -- checks Section sec:family and Appendix app:family of paper 1 against the
-manuscript itself.  Everything is read from Tournaments_3_and_5_voters_MSS.md (tables and the two displayed
+"""check_family_appendix.py -- checks the tables behind Theorem thm:family-value of paper 1 (Section sec:family).
+Everything is read from family_appendix.md (the detailed appendix, with its tables and the two displayed
 completion orders); G_n and H_n are rebuilt from the definitions of Section sec:family-def, written out again
 below.  For every k in range (KMAX on the command line, default 25) it checks:
   * the double cover of Appendix sec:family-cover (tbl:fixed-triangles);
@@ -16,7 +16,7 @@ below.  For every k in range (KMAX on the command line, default 25) it checks:
     fixed arcs; the hub chains, ends and the heavy order A_1 of Appendix sec:family-dual-odd;
   * tbl:small-orders-8 / -9: strict certificates X_8, X_9 and optimal strategies Y_8, Y_9, rank 20 and 23;
   * the example of Section sec:family-tournaments (G_10 along T0..W2 contains G_8).
-FAMILY_MD points it at another copy of the manuscript (negative controls).  Any failure is an AssertionError
+FAMILY_MD points it at another copy of family_appendix.md (negative controls).  Any failure is an AssertionError
 naming the table, row and k.
 Usage: check_family_appendix.py [KMAX=25]
 """
@@ -26,8 +26,8 @@ from itertools import permutations
 from pathlib import Path
 
 import os
-# FAMILY_MD points the checker at another copy of the manuscript (used for the negative controls)
-MD = Path(os.environ.get("FAMILY_MD", Path(__file__).resolve().parent / "Tournaments_3_and_5_voters_MSS.md"))
+# FAMILY_MD points the checker at another copy of family_appendix.md (used for the negative controls)
+MD = Path(os.environ.get("FAMILY_MD", Path(__file__).resolve().parent / "family_appendix.md"))
 TEXT = MD.read_text()
 KMAX = 30           # set from the command line in main()
 

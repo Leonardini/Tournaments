@@ -9,22 +9,22 @@ its completion. This folder holds:
 | file | content |
 |---|---|
 | `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
-| `check_family_appendix.py` | checks the tables of Appendix F, which the proof of Theorem 7.2 uses, against the definitions of Section 7.1, for k ≤ 25 (see below) |
-| `family_tables.md` | the tables of Appendix F and the two completion orders of Section 7.2, extracted mechanically from the manuscript; `check_family_appendix.py` reads them |
+| `family_appendix.md` | the detailed proof of Theorem 7.2, which Appendix F of the paper summarizes: the weighted orders, their loads, the moves and the relations, as tables, with the arguments that use them |
+| `check_family_appendix.py` | checks every table of `family_appendix.md` against the definitions of Section 7.1, for k ≤ 25 (see below) |
 | `lean/` | a Lean 4 proof (Mathlib) of Theorem 7.2 for every n ≥ 8: the value (2n − 3)/(3n − 4), and the uniform distribution on G_n (H_n) as the only optimal Alice strategy of the completion |
 
-## Checking the tables of Appendix F
+## Checking the tables
 
 ```sh
-FAMILY_MD=family_tables.md python3 check_family_appendix.py      # a few seconds, standard library only
+python3 check_family_appendix.py      # a few seconds, standard library only
 ```
 
 The script rebuilds G_n, H_n and their completions from the definitions of Section 7.1 and, for every
-k ≤ 25 (an optional argument changes this bound), checks each table of Appendix F against them: the double
+k ≤ 25 (an optional argument changes this bound), checks each table of `family_appendix.md` against them: the double
 cover, the loads of the weighted orders in the strict certificates, the optimal Bob
 strategy for G_n and its moves, the relations between the arcs of H_n, and the orders for n = 8 and 9.
-Appendix F explains why the entries hold for every k; for the smallest k, where it says the loads are
-checked directly, this script is that check. Any failure stops it with an error naming the table, the row
+`family_appendix.md` explains why the entries hold for every k, and the Lean proof below proves them for
+every k. Any failure stops it with an error naming the table, the row
 and k; it ends with `ALL CHECKS PASS`.
 
 ## The Lean proof
@@ -55,7 +55,7 @@ Predictability is the value of the game in which Alice picks an arc and Bob a li
 winning if the arc is forward. Write n = 2k + 6 (even) or n = 2k + 9 (odd).
 
 - **Bob's side (`bob`, `bob_strict`).** The weighted orders of the strict certificates of
-  Appendix F (for odd n, the six sets together) have total weight c(3n − 4), with c = 2 for even
+  `family_appendix.md` (for odd n, the six sets together) have total weight c(3n − 4), with c = 2 for even
   n ≥ 10, c = 6 for odd n ≥ 11 and c = 1 for n = 8, 9. Every arc of the completion is forward in
   orders of total weight at least c(2n − 3), and every arc outside the obstacle in orders of total
   weight at least c(2n − 3) + 1.
@@ -71,7 +71,7 @@ winning if the arc is forward. Write n = 2k + 6 (even) or n = 2k + 9 (odd).
   that every optimal one equals it. The proof follows Appendix F: the strict certificates confine
   an optimal Alice strategy to the obstacle (Lemma "loads"); the orders of an optimal Bob strategy
   are tight, and the moves of one vertex in them relate the weights of two arcs (Lemma "moves");
-  the moves and relations of Appendix F force all the weights to be equal (for n = 8, 9, the
+  the moves and relations of `family_appendix.md` force all the weights to be equal (for n = 8, 9, the
   equations of the tight orders do).
 
 `Tournament.lean` proves that each completion is a tournament: exactly one arc joins any two
@@ -87,12 +87,12 @@ distinct vertices.
 | `Main.lean` | the value |
 | `Tournament.lean` | the completions are tournaments |
 | `Duality.lean`, `Support.lean`, `Bridge.lean` | optimal Alice strategies: Lemmas "loads" and "moves", sums over the arcs of the obstacle, the uniform distribution |
-| `EvenDual*.lean`, `EvenMoves*.lean`, `OddTight.lean`, `OddMoves*.lean` | the optimal Bob strategies, their tight orders, and the moves and relations of Appendix F |
+| `EvenDual*.lean`, `EvenMoves*.lean`, `OddTight.lean`, `OddMoves*.lean` | the optimal Bob strategies, their tight orders, and the moves and relations of `family_appendix.md` |
 | `UniqueEven.lean`, `UniqueOdd.lean`, `SmallUnique.lean` | the uniform distribution is the only optimal Alice strategy of the obstacle |
 | `Unique.lean` | the final theorems `unique` |
 
 The files other than `Common`, `Upper*`, `Main`, `Tournament`, `Duality`, `Support`, `Bridge`,
-`UniqueEven`, `UniqueOdd` and `Unique` were generated mechanically from the tables of Appendix F;
+`UniqueEven`, `UniqueOdd` and `Unique` were generated mechanically from the tables of `family_appendix.md`;
 every claim in them is proved by `omega`, `decide` or `linarith`, so an error in a table makes the
 build fail rather than prove a wrong theorem.
 

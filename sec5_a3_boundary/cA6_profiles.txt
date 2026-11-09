@@ -1,0 +1,18 @@
+# cA6 (Appendix C.3 of paper 1): two inducing profiles, one order per line, vertices 1..11, earliest first.
+# Section 'nine': a minimum profile at the 2/3 threshold, 9 voters of 8 types; each line is 'multiplicity: order'.
+# Section 'five': a majority-of-5 inducing profile.
+nine
+2: 5 2 9 4 6 1 10 7 8 3 11
+1: 1 7 8 3 11 5 2 9 4 6 10
+1: 3 4 7 5 6 8 9 1 2 11 10
+1: 3 6 7 9 1 4 11 5 2 8 10
+1: 1 4 11 5 2 8 10 3 6 7 9
+1: 6 8 9 1 2 11 10 3 4 7 5
+1: 1 2 11 10 3 4 7 5 6 8 9
+1: 2 8 10 3 6 7 9 1 4 11 5
+five
+1 3 4 7 5 2 6 9 8 11 10
+2 6 7 11 9 1 4 8 5 10 3
+10 3 5 6 1 2 7 8 9 11 4
+4 11 5 6 8 10 7 9 1 2 3
+2 8 3 9 4 1 10 11 7 5 6
