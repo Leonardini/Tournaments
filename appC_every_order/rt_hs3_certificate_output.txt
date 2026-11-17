@@ -1,0 +1,7 @@
+k=25 n=49: certificate value 15886/53 = 299.7358 > C(k,2)-1 = 299: True
+k=50 n=99: certificate value 57563/47 = 1224.7447 > C(k,2)-1 = 1224: True
+k=75 n=149: certificate value 271925/98 = 2774.7449 > C(k,2)-1 = 2774: True
+k=100 n=199: certificate value 975100/197 = 4949.7462 > C(k,2)-1 = 4949: True
+k=125 n=249: certificate value 860222/111 = 7749.7477 > C(k,2)-1 = 7749: True
+k=150 n=299: certificate value 1240397/111 = 11174.7477 > C(k,2)-1 = 11174: True
+k = 3..150 (n = 5..299): HS3(RT_n) >= C(k,2) certified exactly; failures: none

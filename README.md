@@ -112,6 +112,15 @@ analytic and need no computation. Everything below does.
 | FAS = HS₃ for every regular tournament on 11 vertices except T\*: among the 1,223 regular tournaments on 11 vertices, 48 of them 3-inducible, T\* is the only one with HS₃ < FAS | `reg11_fas_hs3.sh` — FAS, HS₃ and 3-inducibility of every entry, each by two exact engines; stops unless the counts are 1,223 / 48 / 1 and the one is T\* |
 | The six 3-inducible self-converse violators (Figure 4) | `make_conj2_cex_figs.R` — re-checks self-converse and HS₃ < FAS |
 
+### Conjecture 2 at every order, and the rotational tournaments (`appC_every_order/`, Appendix C)
+
+| claim | tool |
+|---|---|
+| W12 (n = 12) and C3[T\*, TT₁, TT₁] (n = 13) are strong, 3-inducible, with FAS = HS₃ + 1; the substitution formulas for FAS and HS₃ | `verify_appendix_c.py` — free (exact subset DP + CP-SAT), < 10 s; random substitutions as an independent test of the formulas |
+| HS₃(RT_n) = FAS(RT_n) = (n² − 1)/8: the balanced-copy dual certificate with weights φ(g)/g is feasible with positive slack | `rt_totient_weights.py` — exact rational arithmetic, any k (k ≤ 120 in ~3 s) |
+| The explicit 3-voter profile of RT_n; HS₃(RT_n) computed directly for n ≤ 13 | `verify_appendix_c.py` |
+| Level 1: the certificates as found (3-voter profiles by ILP, FAS/HS₃ with proven optimality, the LP duals for k ≤ 150), FAS(C3[T\*, T\*, T\*]) = 172 by the exact DP at n = 33 (8 GiB) | `appendix_conj2_certs.py`, `rt_hs3_certificate.py` (need **Gurobi**), `mas_dp.c`; outputs in `*_output.txt` |
+
 ### The A(3) threshold fails on the boundary (`sec5_a3_boundary/`)
 
 cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3, 4, 6}.
@@ -185,6 +194,7 @@ Brendan McKay's digraph archive, <https://users.cecs.anu.edu.au/~bdm/data/digrap
 ```
 sec3_mhp/          MHP Conjecture 1 counterexamples
 sec4_fas_hs3/      MHP Conjecture 2 (FAS = HS₃): n ≤ 10 census, T*, regular n = 11
+appC_every_order/  Conjecture 2 at every order; FAS = HS₃ on rotational tournaments (App. C)
 sec5_a3_boundary/  A(3) threshold on the boundary: cA3, censuses, cA6
 obstacle_family/   obstacles at every order: the Lean proof of the family's value, its figure
 appendices/        shared engines + appendix-specific tools
