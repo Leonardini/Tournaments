@@ -143,10 +143,12 @@ static int solve(int allow0) {
 
 int main(int argc, char **argv) {
     n = atoi(argv[1]); m = n*(n-1)/2;
-    char line[256];
+    if (n < 3 || n > MAXN) { fprintf(stderr, "n = %d outside 3..%d (MAXN)\n", n, MAXN); return 1; }
+    char *line = NULL; size_t cap = 0;      /* getline grows the buffer to fit any line */
     long tot = 0, msat = 0, rns = 0, nreal = 0;
-    while (fgets(line, sizeof line, stdin)) {
-        int k = 0;
+    while (getline(&line, &cap, stdin) != -1) {
+        size_t k = 0;
+        if (strlen(line) < (size_t)m) { fprintf(stderr, "short line\n"); return 1; }
         for (int i = 0; i < n; i++) for (int j = i+1; j < n; j++) {
             if (line[k] == '1') { A[i][j] = 1; A[j][i] = 0; }
             else                { A[i][j] = 0; A[j][i] = 1; }
