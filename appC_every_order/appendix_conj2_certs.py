@@ -1,6 +1,6 @@
 """Certificates for the paper-1 appendix "Conjecture 2 fails at every order n >= 11" (1-based labels as in the
 manuscript).  T* = majority of rho, sigma, tau (Section 4).  W12 = T* with the arc 7 -> 1 reversed, plus a vertex 12
-beaten only by 7.  For W12 and for C3[T*, TT_1, TT_1] (n = 13) this prints and re-checks: a 3-voter profile inducing
+beaten only by 7.  For T* and W12 this prints and re-checks: a 3-voter profile inducing
 it (found by a small ILP, then verified), strong connectivity, an optimal order (FAS) and a minimum 3-cycle hitting
 set (HS3), both from Gurobi with proven optimality, and FAS once more from the exact DP (mas_dp.c here; build it with cc -O3 -o mas_dp mas_dp.c).
 One thread.  Usage: python3 appendix_conj2_certs.py"""
@@ -8,7 +8,7 @@ import sys, os, subprocess, tempfile, itertools
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import gurobipy as gp
 from gurobipy import GRB
-from hs3 import solve_hs3, solve_fas, substitute, triangles, _env
+from hs3 import solve_hs3, solve_fas, triangles, _env
 import networkx as nx
 
 def maj(orders, n):
@@ -51,6 +51,3 @@ for x in range(11):
     if x == 6: W[6][11] = True                                    # 7 -> 12
     else: W[11][x] = True                                         # 12 -> everything else
 report("T*", T); report("W12", W)
-TT = lambda a: [[i < j for j in range(a)] for i in range(a)]
-C3 = [[False, True, False], [False, False, True], [True, False, False]]
-report("C3[T*, TT_1, TT_1]", substitute(C3, [T, TT(1), TT(1)]))

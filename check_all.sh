@@ -106,11 +106,9 @@ check "sec4: T* has FAS 17 > HS3 16"        "minimum 3-cycle hitting set has 16 
 check "sec4: regular n = 11, HS3 < FAS only at T*" "CONFIRMED: of the 1223 regular tournaments on 11 vertices, 48 are 3-inducible" "cc R r_igraph python py_ortools" \
       "cd sec4_fas_hs3 && ./reg11_fas_hs3.sh"
 
-echo "${C}== appC_every_order (Conjecture 2 at every order; rotational tournaments) ==${Z}"
-check "appC: W12, n = 13, substitution, RT_n"   "ALL APPENDIX C CHECKS PASS" "python py_ortools" \
+echo "${C}== appC_every_order (the 12-vertex counterexample W12) ==${Z}"
+check "appC: W12 is 3-inducible, FAS 17 > HS3 16" "ALL APPENDIX C CHECKS PASS" "python py_ortools" \
       "cd appC_every_order && python3 verify_appendix_c.py"
-check "appC: RT_n certificate, k <= 120 (exact)" "failures none" "python" \
-      "cd appC_every_order && python3 rt_totient_weights.py 120 3"
 
 echo "${C}== sec5_a3_boundary (A(3) fails on the boundary) ==${Z}"
 check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "R r_lpSolve r_rcdd r_gmp" \
