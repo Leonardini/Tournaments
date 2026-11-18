@@ -115,6 +115,10 @@ check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "
       "cd sec5_a3_boundary && Rscript verify_ce1068.R; rm -f ce1068_inmask.txt"
 check "sec5: cA3 not-3-real / 5-real (CP-SAT)" "k=3 (maj>=2): INFEASIBLE (proven)" "python py_ortools" \
       "cd sec5_a3_boundary && python3 independent_realize3_cpsat.py"
+check "sec5: circulants at 21, 27, 45 not 3-inducible" "PASS" "python" \
+      "cd sec5_a3_boundary && python3 circulant_bases.py"
+check "sec5: the 16 circulants on 15 vertices" "PASS" "cc python glpk" \
+      "cd sec5_a3_boundary && d=\$(mktemp -d) && cc -O2 -o \$d/alpha_fast alpha_fast.c -I/opt/homebrew/include -L/opt/homebrew/lib -I/usr/local/include -L/usr/local/lib -lglpk && python3 circulant15.py \$d/alpha_fast; rc=\$?; rm -rf \$d; exit \$rc"
 check "sec5: cA6 profiles (9 voters at 2/3; majority of 5)" "in the 9-voter profile every arc has at least 6 of 9 voters" "python" \
       "cd sec5_a3_boundary && python3 verify_cA6_profiles.py"
 
