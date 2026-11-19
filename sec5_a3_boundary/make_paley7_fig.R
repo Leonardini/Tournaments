@@ -28,7 +28,7 @@ for (O in orders) {
 stopifnot(all(fwd[adj] == 2))    # every arc forward in exactly 2 of 3 voters: a unit-margin profile
 cat("Paley(7) checks passed: tournament, regular, P(0,1), P(4,2), P(5,4) induce it with unit margin\n")
 
-pal = c("1" = "#000000", "2" = "#0072B2", "4" = "#CC79A7")
+pal = c("1" = "#000000", "2" = "#0072B2", "4" = "#7B3294")
 edges = NULL; ecol = NULL
 for (u in 0:(n - 1)) for (s in S) {
   edges = rbind(edges, c(u + 1, (u + s) %% n + 1)); ecol = c(ecol, pal[as.character(s)])

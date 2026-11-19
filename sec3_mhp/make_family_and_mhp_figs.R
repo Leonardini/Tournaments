@@ -18,7 +18,8 @@ library(igraph)
 
 plotStyled = function(g, layout, labels, ecol, ewid, elty, fname, elabels = NULL,
                       legendItems = NULL, legendCols = NULL, vsize = 22,
-                      arrowSize = 0.5, curved = 0.08, labelPos = NULL) {
+                      arrowSize = 0.5, curved = 0.08, labelPos = NULL,
+                      omitLabel = NULL) {
   pdf(fname, width = 6.5, height = 6.5)
   par(mar = c(1.6, 0.5, 0.5, 0.5), xpd = NA)
   plot(g, layout = layout,
@@ -30,6 +31,9 @@ plotStyled = function(g, layout, labels, ecol, ewid, elty, fname, elabels = NULL
        edge.label.color = "black", edge.label.cex = 1.05,
        edge.arrow.size = arrowSize, edge.curved = curved)
   if (!is.null(labelPos)) {
+    # arcs whose label equals omitLabel (the margin-1 arcs) are left unlabelled
+    keep = !(as.character(elabels) %in% omitLabel)
+    elabels = elabels[keep]; labelPos = labelPos[keep, , drop = FALSE]
     # weight labels off the arcs, on white discs so they never blend into a line
     long = nchar(as.character(elabels)) > 1
     points(labelPos[!long, 1], labelPos[!long, 2], pch = 21, col = NA, bg = "white", cex = 2.9)
@@ -274,7 +278,7 @@ labs = ifelse(wm7$weights == w9, as.character(wm7$weights), paste0(wm7$weights, 
 lay = layout_in_circle(g)
 plotStyled(g, lay, 1:4, ecol, ewid, elty, "MHP_Fig1.pdf",
            elabels = labs, vsize = 20, arrowSize = 0.85, curved = 0,
-           labelPos = edgeLabelPos(lay, wm7$edges))
+           labelPos = edgeLabelPos(lay, wm7$edges), omitLabel = "1")
 
 ## ---------- Counterexample cex:strong-m5 (Figure fig:mhp, panel b) ----------
 
@@ -294,4 +298,4 @@ ewid6 = rep(1.4, ecount(g6)); ewid6[inFe] = 3.5
 lay6 = layout_in_circle(g6)
 plotStyled(g6, lay6, 1:6, ecol6, ewid6, rep(1, ecount(g6)),
            "MHP_Fig2.pdf", elabels = wm6$weights, vsize = 20,
-           arrowSize = 0.8, curved = 0, labelPos = edgeLabelPos(lay6, wm6$edges))
+           arrowSize = 0.8, curved = 0, labelPos = edgeLabelPos(lay6, wm6$edges), omitLabel = "1")

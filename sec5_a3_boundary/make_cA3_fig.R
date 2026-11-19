@@ -44,7 +44,7 @@ cat("cA3 checks passed: tournament, regular (out-deg 5), all 55 arcs tight at 4/
 
 # edge list, coloured by step class
 pal = c("1" = "#000000", "2" = "#0072B2", "3" = "#009E73",
-        "4" = "#CC79A7", "6" = "#D55E00")
+        "4" = "#7B3294", "6" = "#D55E00")
 edges = NULL; ecol = NULL
 for (u in 0:10) for (s in S) {
   v = (u + s) %% 11

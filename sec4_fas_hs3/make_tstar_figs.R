@@ -49,23 +49,50 @@ stopifnot(sol$status == 0, abs(sol$objval - 16) < 1e-9)
 hsIdx = which(sol$solution > 0.5)
 cat("HS check: minimum 3-cycle hitting set has", length(hsIdx), "arcs\n")
 
-# shared layout: circle in witness order, clockwise from the top
+# shared layout. The two orbits {4,5,6} and {8,9,10} are cyclic triangles and modules (every
+# other vertex beats all three or none of each; checked below), so each is drawn as a small
+# triangle of its own. The five other vertices and the two triangles sit on a circle in the
+# witness order, clockwise from the top, so the FAS panel's backward arcs read against it.
+blocks = list(c(4, 5, 6), c(8, 9, 10))
+for (B in blocks) {
+  stopifnot(adj[B[1], B[2]], adj[B[2], B[3]], adj[B[3], B[1]])          # a cyclic triangle
+  for (x in setdiff(1:n, B)) stopifnot(length(unique(adj[x, B])) == 1)  # a module
+}
+slots = list()
+for (v in worder) {
+  B = Filter(function(B) v %in% B, blocks)
+  if (length(B) == 0) slots[[length(slots) + 1]] = v
+  else if (v == B[[1]][1]) slots[[length(slots) + 1]] = B[[1]]
+}
+stopifnot(length(slots) == n - 2 * length(blocks))
 lay = matrix(0, n, 2)
-for (i in 1:n) {
-  ang = pi / 2 - 2 * pi * (i - 1) / n
-  lay[worder[i], ] = c(cos(ang), sin(ang))
+rBlock = 0.15
+for (i in seq_along(slots)) {
+  ang = pi / 2 - 2 * pi * (i - 1) / length(slots)
+  centre = c(cos(ang), sin(ang))
+  S = slots[[i]]
+  if (length(S) == 1) lay[S, ] = centre
+  else for (t in 1:3) {
+    a = ang + 2 * pi * (t - 1) / 3
+    lay[S[t], ] = centre + rBlock * c(cos(a), sin(a))
+  }
 }
 
 drawPanel = function(hi, hiCol, fname) {
   ecol = rep("gray70", nrow(edges)); ecol[hi] = hiCol
   ewid = rep(1.2, nrow(edges));      ewid[hi] = 3
   pdf(fname, width = 6, height = 6)
-  par(mar = c(0.5, 0.5, 0.5, 0.5))
-  plot(g, layout = lay,
-       vertex.color = "orange", vertex.label = 1:n,
-       vertex.label.color = "navy", vertex.size = 16,
+  par(mar = c(0.2, 0.2, 0.2, 0.2))
+  plot.new(); plot.window(xlim = c(-1.2, 1.2), ylim = c(-1.1, 1.3), asp = 1)
+  for (B in blocks) {   # a shaded disc behind each triangle module
+    cx = mean(lay[B, 1]); cy = mean(lay[B, 2]); th = seq(0, 2 * pi, length.out = 100)
+    polygon(cx + 0.25 * cos(th), cy + 0.25 * sin(th), col = "#EFE6D2", border = "#C9B58A")
+  }
+  plot(g, layout = lay, rescale = FALSE, add = TRUE,
+       vertex.color = "orange", vertex.label = 1:n, vertex.label.cex = 0.85,
+       vertex.label.color = "navy", vertex.size = 11,
        edge.color = ecol, edge.width = ewid,
-       edge.arrow.size = 0.4, edge.curved = 0.08)
+       edge.arrow.size = 0.35, edge.curved = 0.05)
   dev.off()
   cat(fname, "written\n")
 }
