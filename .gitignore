@@ -34,3 +34,5 @@ appendices/obstacle_catalogue/*.log
 
 # Lean build outputs and the Mathlib cache (lake exe cache get)
 .lake/
+sec4_fas_hs3/n11_slices/
+sec4_fas_hs3/n11_violators_found.txt

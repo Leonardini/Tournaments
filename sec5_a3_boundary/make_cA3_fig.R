@@ -60,11 +60,11 @@ for (i in 1:n) {
   lay[i, ] = c(cos(ang), sin(ang))
 }
 
-pdf("cA3.pdf", width = 6.5, height = 7.3)
+pdf("cA3.pdf", width = 6.5, height = 6.6)
 par(mar = c(0.5, 0.4, 0.4, 0.4), xpd = NA)
 # widen the y-window below the unit circle so the legend sits in clear space,
 # well below vertices 5 and 6 (which lie at the bottom of the circle)
-plot(g, layout = lay, ylim = c(-1.72, 1.03),
+plot(g, layout = lay, ylim = c(-1.52, 1.03),
      vertex.color = "orange", vertex.label = 0:10,
      vertex.label.color = "navy", vertex.label.cex = 1.5, vertex.size = 20,
      edge.color = ecol, edge.width = 1.7, edge.arrow.size = 0.5, edge.curved = 0)

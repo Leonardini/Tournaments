@@ -7,8 +7,8 @@ the minimum 3-cycle hitting set. The single script builds each tournament from e
 lists and multiplicities, finds the minimum-weight FAS **by brute force over all vertex orders**,
 self-checks the tournament structure and the optimal FAS (value / number of tied optimal sets /
 the specific arcs) against the paper's claimed values — stopping on any mismatch — and only then
-renders the figures. As a side product it also draws the Section-9 obstacle-family members
-(`ObstacleG8/H9/G10/H11`), each Eulerian-checked with `3n − 4` arcs before plotting.
+renders the figures. The obstacle-family figures are drawn by
+`../obstacle_family/make_family_section_figs.R`.
 
 **Files.**
 - `make_family_and_mhp_figs.R` — self-checking brute-force verifier + figure generator for
@@ -29,10 +29,9 @@ Rscript make_family_and_mhp_figs.R
 
 - `make_family_and_mhp_figs.R` — approximately a few seconds (brute force is at most 24 vertex
   orders for the n = 4 tournaments and 720 for the n = 6 tournament; the rest is `igraph`
-  rendering of four small PDFs). It writes four
-  PDFs to the working directory: `ObstacleG8.pdf`, `ObstacleH9.pdf` (the two smallest members of the obstacle families;
-  `../obstacle_family/make_family_section_figs.R` draws the next two), and `MHP_Fig1.pdf`, `MHP_Fig2.pdf`, the two
-  panels of the figure of the counterexamples to Conjecture 1 of Milosz et al. Each figure prints a confirmation line, e.g. `ObstacleG8.pdf written`.
+  rendering of two small PDFs). It writes
+  `MHP_Fig1.pdf` and `MHP_Fig2.pdf` to the working directory, the two
+  panels of the figure of the counterexamples to Conjecture 1 of Milosz et al. Each figure prints a confirmation line, e.g. `MHP_Fig1.pdf written`.
   Panel (a) shows the four-vertex counterexample for both seven and nine voters, which differ only in the
   margin of the arc 3 → 4 (labelled "3 (5)"); its self-check prints
   `MHP_Fig1: seven voters, min-weight FAS value <v> | optimal sets: 2 ; nine voters, value <v> | optimal sets: 1`,

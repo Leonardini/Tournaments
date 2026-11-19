@@ -55,3 +55,4 @@ if ok3_10:
     print("    => 3-realizable after ANY single deletion: allGraphs[[1068]] is VERTEX-CRITICAL for non-3-realizability.")
 else:
     print("    => NOT 3-realizable at n=10: a SMALLER (n=10) counterexample lives inside it! (check its alpha*)")
+

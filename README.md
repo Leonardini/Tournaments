@@ -139,7 +139,7 @@ cA3 is the code's **ce1068**: the Z₁₁ circulant with connection set {1, 2, 3
 | claim | tool |
 |---|---|
 | The value (2n − 3)/(3n − 4) for the completions of the paper's previous version (Theorem 7.2 now uses other completions; see `obstacle_family/README.md`) | `lean/` — a Lean 4 proof (Mathlib), for every n; build and axiom check in its README |
-| The figure of G₁₀ and H₁₁ with their arc classes | `make_family_section_figs.R` (checks arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing) |
+| The figures of G₈, H₉, G₁₀ and H₁₁ with their arc classes | `make_family_section_figs.R` (checks arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing) |
 
 ### Appendices — shared engines and appendix-specific tools (`appendices/`)
 

@@ -8,7 +8,8 @@ its completion. This folder holds:
 
 | file | content |
 |---|---|
-| `make_family_section_figs.R` | the figure of G₁₀ and H₁₁ with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
+| `g10_completion_example.py` | the example of Section 7 in which G₁₀, completed along T₀, T₁, T₂, T₃, P₁, P₂, U₁, U₂, W₁, W₂, contains a copy of G₈ and has predictability exactly 13/20: no order keeps more than 13 of the copy's 20 arcs forward, and a Bob strategy checked in exact arithmetic reaches 13/20 (seconds) |
+| `make_family_section_figs.R` | the figures of G₈, H₉, G₁₀ and H₁₁ on one shared layout, with their arc classes (path, hub, defect, other); checks the arc counts, the Eulerian property and that no arc is drawn through a vertex before drawing, and writes `ObstacleG8.pdf`, `ObstacleH9.pdf`, `ObstacleG10.pdf` and `ObstacleH11.pdf` to the folder it is run from |
 | `family_appendix.md` | the detailed proof of Theorem 7.2, which Appendix F of the paper summarizes: the weighted orders, their loads, the moves and the relations, as tables, with the arguments that use them |
 | `check_family_appendix.py` | checks every table of `family_appendix.md` against the definitions of Section 7.1, for k ≤ 25 (see below) |
 | `lean/` | a Lean 4 proof (Mathlib) of Theorem 7.2 for every n ≥ 8: the value (2n − 3)/(3n − 4), and the uniform distribution on G_n (H_n) as the only optimal Alice strategy of the completion |

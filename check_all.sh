@@ -106,6 +106,9 @@ check "sec4: T* has FAS 17 > HS3 16"        "minimum 3-cycle hitting set has 16 
 check "sec4: regular n = 11, HS3 < FAS only at T*" "CONFIRMED: of the 1223 regular tournaments on 11 vertices, 48 are 3-inducible" "cc R r_igraph python py_ortools" \
       "cd sec4_fas_hs3 && ./reg11_fas_hs3.sh"
 
+check "sec4: the 12 violators at n = 11; T* hitting sets" "PASS" "python py_ortools" \
+      "cd sec4_fas_hs3 && python3 verify_n11_violators.py"
+
 echo "${C}== appC_every_order (the 12-vertex counterexample W12) ==${Z}"
 check "appC: W12 is 3-inducible, FAS 17 > HS3 16" "ALL APPENDIX C CHECKS PASS" "python py_ortools" \
       "cd appC_every_order && python3 verify_appendix_c.py"
@@ -115,6 +118,8 @@ check "sec5: cA3 exact alpha* = 2/3 (rational)" "alpha* == 2/3 exactly ? TRUE" "
       "cd sec5_a3_boundary && Rscript verify_ce1068.R; rm -f ce1068_inmask.txt"
 check "sec5: cA3 not-3-real / 5-real (CP-SAT)" "k=3 (maj>=2): INFEASIBLE (proven)" "python py_ortools" \
       "cd sec5_a3_boundary && python3 independent_realize3_cpsat.py"
+check "sec5: cA3 - 0 profile and one-arc reversals of cA3" "PASS" "python py_ortools py_numpy py_scipy" \
+      "cd sec5_a3_boundary && python3 ca3_one_arc_reversals.py"
 check "sec5: circulants at 21, 27, 45 not 3-inducible" "PASS" "python" \
       "cd sec5_a3_boundary && python3 circulant_bases.py"
 check "sec5: circulants at 21, 27, 45 are 5-inducible, no 6-progression 4:2 profile" "PASS" "python py_numpy py_scipy" \
@@ -127,6 +132,9 @@ check "sec5: cA6 profiles (9 voters at 2/3; majority of 5)" "in the 9-voter prof
 echo "${C}== obstacle_family (Theorem 7.2: the tables of the detailed appendix) ==${Z}"
 check "obstacle family: weighted orders, loads, moves, relations (k <= 25)" "ALL CHECKS PASS" "python" \
       "cd obstacle_family && python3 check_family_appendix.py"
+
+check "obstacle family: completed G10 example, alpha* = 13/20" "PASS" "python py_numpy py_scipy" \
+      "cd obstacle_family && python3 g10_completion_example.py"
 
 echo "${C}== appendices (obstacle-dual / LP tools) ==${Z}"
 check "n = 9 obstacles: 59 + 51 classes (exact)" "n9_signed_obstacles_254.tsv: 51/51 classes certified exactly" "python" \

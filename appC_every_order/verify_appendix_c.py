@@ -4,7 +4,7 @@ Free tools only: FAS by an exact Held-Karp subset DP (pure Python), HS3 (fewest 
 directed 3-cycle) by OR-Tools CP-SAT with proven optimality.  Vertex labels are 1-based, as in the paper.
 
   A  T* (majority of the paper's printed rho, sigma, tau): regular, strong, FAS = 17 > 16 = HS3.
-  B  W12 (T* with 7 -> 1 reversed, plus a vertex 12 beaten only by 7): the paper's profile induces it,
+  B  W12 (T* with 7 -> 1 reversed, plus a vertex 12 -- labelled 0 in the paper -- beaten only by 7): the paper's profile induces it,
      it is strong, has 60 directed 3-cycles, the paper's order leaves 17 arcs backward, FAS = 17, HS3 = 16.
 
 Usage: python3 verify_appendix_c.py        (a few seconds)"""
@@ -76,10 +76,12 @@ assert W[6][0]; W[6][0], W[0][6] = False, True                   # reverse 7 -> 
 for x in range(11):
     if x == 6: W[6][11] = True                                    # 7 -> 12
     else: W[11][x] = True                                         # 12 beats every other vertex
-P12 = [(1, 2, 7, 12, 3, 5, 6, 4, 11, 9, 10, 8), (6, 11, 12, 8, 9, 10, 1, 2, 3, 7, 4, 5), (4, 5, 10, 8, 9, 3, 7, 12, 11, 1, 2, 6)]
+# the paper labels the added vertex 0 (to keep the display within the margin); here it is vertex 12
+PAPER_P12 = [(1, 2, 7, 0, 3, 5, 6, 4, 11, 9, 10, 8), (6, 11, 0, 8, 9, 10, 1, 2, 3, 7, 4, 5), (4, 5, 10, 8, 9, 3, 7, 0, 11, 1, 2, 6)]
+P12 = [tuple(12 if v == 0 else v for v in p) for p in PAPER_P12]
 claim("the paper's three orders induce W12", maj(P12, 12) == W)
 claim(f"strong, with {len(triangles(W))} = 60 directed 3-cycles", strong(W) and len(triangles(W)) == 60)
-order = (12, 11, 10, 8, 9, 1, 2, 3, 7, 6, 4, 5); pos = {v - 1: i for i, v in enumerate(order)}
+order = tuple(12 if v == 0 else v for v in (0, 11, 10, 8, 9, 1, 2, 3, 7, 6, 4, 5)); pos = {v - 1: i for i, v in enumerate(order)}
 back = sum(W[u][v] and pos[u] > pos[v] for u in range(12) for v in range(12))
 fW, hW = fas(W), hs3(W)
 claim(f"the paper's order leaves {back} = 17 arcs backward; FAS = {fW} = 17; HS3 = {hW} = 16", (back, fW, hW) == (17, 17, 16))

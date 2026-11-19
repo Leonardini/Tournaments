@@ -36,9 +36,9 @@ for (u in 0:(n - 1)) for (s in S) {
 g = graph_from_edgelist(edges, directed = TRUE)
 lay = t(sapply(1:n, function(i) { ang = pi / 2 - 2 * pi * (i - 1) / n; c(cos(ang), sin(ang)) }))
 
-pdf("Paley7.pdf", width = 6.5, height = 7.3)
+pdf("Paley7.pdf", width = 6.5, height = 6.6)
 par(mar = c(0.5, 0.4, 0.4, 0.4), xpd = NA)
-plot(g, layout = lay, ylim = c(-1.72, 1.03),
+plot(g, layout = lay, ylim = c(-1.52, 1.03),
      vertex.color = "orange", vertex.label = 0:(n - 1),
      vertex.label.color = "navy", vertex.label.cex = 1.5, vertex.size = 20,
      edge.color = ecol, edge.width = 1.7, edge.arrow.size = 0.5, edge.curved = 0)
