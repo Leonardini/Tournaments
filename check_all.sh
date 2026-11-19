@@ -122,7 +122,7 @@ check "sec5: cA3 - 0 profile and one-arc reversals of cA3" "PASS" "python py_ort
       "cd sec5_a3_boundary && python3 ca3_one_arc_reversals.py"
 check "sec5: circulants at 21, 27, 45 not 3-inducible" "PASS" "python" \
       "cd sec5_a3_boundary && python3 circulant_bases.py"
-check "sec5: circulants at 21, 27, 45 are 5-inducible, no 6-progression 4:2 profile" "PASS" "python py_numpy py_scipy" \
+check "sec5: circulants at 21, 27, 45 are 5-inducible, no 6-voter 4:2 profile" "PASS" "python py_numpy py_scipy" \
       "cd sec5_a3_boundary && python3 circulant_five_voters.py"
 check "sec5: the 16 circulants on 15 vertices" "PASS" "cc python glpk" \
       "cd sec5_a3_boundary && d=\$(mktemp -d) && cc -O2 -o \$d/alpha_fast alpha_fast.c -I/opt/homebrew/include -L/opt/homebrew/lib -I/usr/local/include -L/usr/local/lib -lglpk && python3 circulant15.py \$d/alpha_fast; rc=\$?; rm -rf \$d; exit \$rc"

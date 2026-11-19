@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """Paper 1, after Proposition cf-six-voters: the three circulants settled by computation in
-Theorem thm:circulant-family (n = 21, 27, 45) are 5-inducible, although no six progressions with
-steps in D back every arc 4:2.
+Theorem thm:circulant-family (n = 21, 27, 45) are 5-inducible, although no six voters give every
+arc exactly four of the six votes.
 
 For each n this script
   1. reads the five orders in circulant_five_voters.txt and checks that their majority tournament is
      the circulant of e (connection set S = {s : sum_i (s e_i mod n) = n});
-  2. checks, with an integer program over the 3n progressions P(a, d_i), d_i = e_i^{-1}, that no choice
-     of two progressions of each step makes every arc backward in exactly two of the six:
-        y_{i,a} in {0, 1, 2},  sum_a y_{i,a} = 2 (each i),
+  2. checks that no six voters give every arc exactly four of the six votes. In such a profile every
+     arc is backward in exactly two voters, so each cyclic triangle has 3 x 2 = 6 backward incidences;
+     every voter has at least one backward arc on it, hence exactly one. So every voter is admissible,
+     and circulant_bases.py shows that the admissible orders are exactly the 3n progressions
+     P(a, d_i), d_i = e_i^{-1}. It remains that no six progressions, repetition allowed and with no
+     condition on the steps, make every arc backward in exactly two of them:
+        y_{i,a} in {0, ..., 6},  sum_{i,a} y_{i,a} = 6,
         sum_{(i,a): arc backward in P(a, d_i)} y_{i,a} = 2  (every arc);
-     infeasibility of this system is the claim.
+     infeasibility of this system (HiGHS, through scipy) is the claim.
 Usage: python3 circulant_five_voters.py   (needs numpy and scipy; a few seconds)
 """
 import sys
@@ -48,14 +52,15 @@ def main():
                 if (b - a) % n in S and sum(p[a] < p[b] for p in pos) < 3:
                     sys.exit(f"n={n}: arc {a}->{b} lacks a majority")
         cols = [(i, a) for i in range(3) for a in range(n)]
-        rows = [[1 if c[0] == i else 0 for c in cols] for i in range(3)]
-        rows += [[1 if ((v - a) * e[i] % n) < (s * e[i] % n) else 0 for (i, a) in cols]
-                 for s in sorted(S) for v in range(n)]
-        r = milp(np.zeros(len(cols)), constraints=LinearConstraint(np.array(rows), 2, 2),
-                 integrality=np.ones(len(cols)), bounds=Bounds(0, 2))
+        arc_rows = [[1 if ((v - a) * e[i] % n) < (s * e[i] % n) else 0 for (i, a) in cols]
+                    for s in sorted(S) for v in range(n)]
+        A = np.array([[1] * len(cols)] + arc_rows)
+        target = [6] + [2] * len(arc_rows)
+        r = milp(np.zeros(len(cols)), constraints=LinearConstraint(A, target, target),
+                 integrality=np.ones(len(cols)), bounds=Bounds(0, 6))
         if r.status != 2:
             sys.exit(f"n={n}: the six-progression system is not reported infeasible (status {r.status})")
-        print(f"n={n}: five voters induce the circulant of e={e}; no six progressions (two per step) back every arc 4:2")
+        print(f"n={n}: five voters induce the circulant of e={e}; no six voters give every arc exactly 4 of 6")
     print("PASS")
 
 
