@@ -38,6 +38,7 @@
 *Counterexamples at every odd order (the circulant family theorem)*
 - `circulant_bases.py` — the three orders the paper settles by computation, n = 21, 27, 45: for the triple of units given there it checks that every arc lies on a cyclic triangle, finds by depth-first search that the only orders with one backward arc on every cyclic triangle are the progressions of the three steps, and that no three progressions have pairwise disjoint backward sets (so the circulant is not 3-inducible). Standard library only, about two seconds.
 - `circulant15.py` — the 15-vertex half: the 128 connection sets fall into 16 orbits under multiplication by units; `alpha_fast` gives α\* for one set per orbit, and exactly three orbits reach 2/3 (RT₁₅, RT₅[C₃], C₃[RT₅], the last two checked to be substitutions). Usage `python3 circulant15.py ./alpha_fast`, about 40 seconds.
+- `circulant_five_voters.py` with `circulant_five_voters.txt` — the same three orders: five voters that induce each circulant (checked arc by arc), and an integer program showing that no six progressions, two of each step, give every arc exactly 4 of 6 votes. Needs numpy and scipy, a few seconds.
 
 *Figures*
 - `make_cA3_fig.R` — Figure 5 (`cA3.pdf`), the circulant drawing; self-checks the six-order 2/3-certificate.

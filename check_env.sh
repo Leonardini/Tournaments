@@ -63,7 +63,7 @@ record R      "$([ -n "$R_V"  ] && echo 1 || echo 0)" "$R_V"           "R"      
 
 # ---- Python packages -----------------------------------------------------------------
 # name:import-path — one interpreter start for all of them.
-PY_PROBE="ortools:ortools.sat.python.cp_model cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx"
+PY_PROBE="ortools:ortools.sat.python.cp_model cplex:cplex numpy:numpy pycddlib:cdd.gmp igraph:igraph networkx:networkx scipy:scipy"
 PY_OUT=""
 if [ -n "$PY_V" ]; then
   PY_OUT=$(python3 - $PY_PROBE 2>/dev/null <<'PYEOF'
@@ -86,6 +86,7 @@ fi
 pyver() { printf '%s\n' "$PY_OUT" | awk -v m="$1" '$1==m {print $2; found=1} END{if(!found) print "-"}'; }
 
 section "Python packages          ${D}uv sync   (or: pip install -r requirements.txt)${Z}"
+v=$(pyver scipy);      record py_scipy      "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "scipy"      "integer program: sec5 five-voter circulants (with numpy)" 1
 v=$(pyver ortools);    record py_ortools    "$([ "$v" != - ] && echo 1 || echo 0)" "$v" "ortools"    "CP-SAT: sec5 checks" 1
 for pk in numpy pycddlib igraph networkx; do
   lab=$pk; [ "$pk" = igraph ] && lab=python-igraph

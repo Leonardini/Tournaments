@@ -5,6 +5,8 @@
 # See pyproject.toml for what each dependency is for.
 
 ortools>=9.10
+numpy>=1.26
+scipy>=1.11
 
 # Optional extras (uncomment if you want them):
 # numpy>=1.26 pycddlib>=3.0 python-igraph>=0.11 networkx>=3.2   # appendices/obstacle_catalogue (pycddlib needs cddlib + GMP)

@@ -10,6 +10,8 @@ license = { text = "MIT" }
 # It is free and pip-installable; no headline result needs anything else.
 dependencies = [
     "ortools>=9.10",   # CP-SAT: the sec5 realizability checks
+    "numpy>=1.26",     # sec5 five-voter circulants
+    "scipy>=1.11",     # sec5 five-voter circulants (integer program)
 ]
 
 [project.optional-dependencies]
